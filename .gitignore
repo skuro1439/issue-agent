@@ -1,3 +1,6 @@
 # Edtor
 .idea
 /*.iml
+
+# Project
+.tmp

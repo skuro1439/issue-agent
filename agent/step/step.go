@@ -1,0 +1,95 @@
+package step
+
+import (
+	"github/clover0/issue-agent/functions"
+)
+
+type DoType string
+type JSONString string
+
+func (j JSONString) String() string {
+	return string(j)
+}
+
+const (
+	Unknown            = DoType("unknown")
+	Unrecoverable      = DoType("unrecoverable")
+	Exec               = DoType("exec")
+	WaitingInstruction = DoType("waiting_instruction")
+	ReturnToLLM        = DoType("return_to_llm")
+	Submit             = DoType("submit")
+)
+
+type Step struct {
+	Do                  DoType
+	ReturnToLLMContexts []ReturnToLLMContext
+	FunctionContexts    []FunctionContext
+}
+
+type ReturnToLLMContext struct {
+	ToolCallerID string // TODO: non OpenAI dependency
+	Content      string
+}
+
+type FunctionContext struct {
+	Function     functions.Function
+	FunctionArgs JSONString
+	ToolCallerID string // TODO: non OpenAI dependency
+}
+
+type FunctionsInput struct {
+	FuncName     string
+	FunctionArgs string
+	ToolCallerID string // TODO: non OpenAI dependency
+}
+
+func NewExecStep(fnsInput []FunctionsInput) Step {
+	var contexts []FunctionContext
+	for _, v := range fnsInput {
+		f, err := functions.FunctionByName(v.FuncName)
+		if err != nil {
+			return NewUnrecoverableStep()
+		}
+		contexts = append(contexts, FunctionContext{
+			Function:     f,
+			FunctionArgs: JSONString(v.FunctionArgs),
+			ToolCallerID: v.ToolCallerID,
+		})
+	}
+
+	return Step{
+		Do:               Exec,
+		FunctionContexts: contexts,
+	}
+}
+
+func NewWaitingInstructionStep() Step {
+	return Step{Do: WaitingInstruction}
+}
+
+func NewUnknownStep() Step {
+	return Step{Do: Unknown}
+}
+
+func NewUnrecoverableStep() Step {
+	return Step{Do: Unrecoverable}
+}
+
+type ReturnToLLMInput struct {
+	ToolCallerID string // TODO: non OpenAI dependency
+	Content      string
+}
+
+func NewReturnToLLMStep(input []ReturnToLLMInput) Step {
+	var contexts []ReturnToLLMContext
+	for _, v := range input {
+		contexts = append(contexts, ReturnToLLMContext{
+			ToolCallerID: v.ToolCallerID,
+			Content:      v.Content,
+		})
+	}
+	return Step{
+		Do:                  ReturnToLLM,
+		ReturnToLLMContexts: contexts,
+	}
+}
