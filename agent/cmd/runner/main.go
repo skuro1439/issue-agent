@@ -37,13 +37,30 @@ func newGitHub() *github.Client {
 	return github.NewClient(nil).WithAuthToken(token)
 }
 
+func envGtiHubOwner() string {
+	v, ok := os.LookupEnv("GITHUB_OWNER")
+	if !ok {
+		panic("GITHUB_OWNER is not set")
+	}
+	return v
+}
+
+func envGtiHubRepository() string {
+	v, ok := os.LookupEnv("GITHUB_REPOSITORY")
+	if !ok {
+		panic("GITHUB_REPOSITORY is not set")
+	}
+	return v
+}
+
 func main() {
 	workdir := os.Getenv("AGENT_WORKDIR")
 	if err := os.Chdir(workdir); err != nil {
 		log.Fatalf("failed to change directory: %s", err)
 	}
 
-	owner, repository := "clover0", "hobby"
+	githubOwner := envGtiHubOwner()
+	githubRepository := envGtiHubRepository()
 
 	//lo := logger.NewDefaultLogger()
 	lo := logger.NewPrinter()
@@ -62,7 +79,7 @@ func main() {
 
 	issLoader := loader.NewGitHub(gh)
 	ctx := context.Background()
-	iss, err := issLoader.GetIssue(ctx, owner, repository, 5)
+	iss, err := issLoader.GetIssue(ctx, githubOwner, githubRepository, 5)
 	if err != nil {
 		panic(err)
 	}
@@ -88,7 +105,7 @@ func main() {
 	nextStep := oai.CompletionNextStep(ctx, chat)
 
 	githubService := agithub.NewSubmitFileGitHubService(
-		owner, repository, gh, lo,
+		githubOwner, githubRepository, gh, lo,
 	)
 
 	var i int
