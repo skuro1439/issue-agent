@@ -1,6 +1,7 @@
 package step
 
 import (
+	"fmt"
 	"github/clover0/issue-agent/functions"
 )
 
@@ -24,6 +25,7 @@ type Step struct {
 	Do                  DoType
 	ReturnToLLMContexts []ReturnToLLMContext
 	FunctionContexts    []FunctionContext
+	UnrecoverableErr    error
 }
 
 type ReturnToLLMContext struct {
@@ -48,7 +50,7 @@ func NewExecStep(fnsInput []FunctionsInput) Step {
 	for _, v := range fnsInput {
 		f, err := functions.FunctionByName(v.FuncName)
 		if err != nil {
-			return NewUnrecoverableStep()
+			return NewUnrecoverableStep(fmt.Errorf("function not found %s: %w", v.FuncName, err))
 		}
 		contexts = append(contexts, FunctionContext{
 			Function:     f,
@@ -71,8 +73,11 @@ func NewUnknownStep() Step {
 	return Step{Do: Unknown}
 }
 
-func NewUnrecoverableStep() Step {
-	return Step{Do: Unrecoverable}
+func NewUnrecoverableStep(err error) Step {
+	return Step{
+		Do:               Unrecoverable,
+		UnrecoverableErr: err,
+	}
 }
 
 type ReturnToLLMInput struct {
