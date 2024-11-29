@@ -1,10 +1,9 @@
 package functions
 
 import (
+	"fmt"
 	"os"
-	"path/filepath"
 	"reflect"
-	"strings"
 )
 
 const FuncListFiles = "list_files"
@@ -12,18 +11,18 @@ const FuncListFiles = "list_files"
 func NewListFilesFunction() Function {
 	f := Function{
 		Name:        FuncListFiles,
-		Description: "List the files within the directory",
+		Description: "List the files within the directory like Unix ls command. Each line contains the file mode, size, and name",
 		Func:        ListFiles,
 		FuncType:    reflect.TypeOf(ListFiles),
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"root": map[string]interface{}{
+				"path": map[string]interface{}{
 					"type":        "string",
-					"description": "The path to list within its directory",
+					"description": "The valid path to list within its directory",
 				},
 			},
-			"required":             []string{"root"},
+			"required":             []string{"path"},
 			"additionalProperties": false,
 		},
 	}
@@ -34,24 +33,25 @@ func NewListFilesFunction() Function {
 }
 
 type ListFilesInput struct {
-	Root string
+	Path string
 }
 
 func ListFiles(input ListFilesInput) ([]string, error) {
-	files := []string{}
-
-	err := filepath.Walk(input.Root, func(path string, info os.FileInfo, err error) error {
-		// TODO: selectable file type
-		// ignore hidden files
-		if strings.HasPrefix(info.Name(), ".") {
-			return nil
-		}
-		files = append(files, path)
-		return nil
-	})
-
+	entries, err := os.ReadDir(input.Path)
 	if err != nil {
-		return nil, err
+		return []string{}, fmt.Errorf("read dir error: %w", err)
+	}
+
+	var files []string
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err != nil {
+			return []string{}, fmt.Errorf("get file info error: %w", err)
+		}
+
+		files = append(files,
+			fmt.Sprintf("%s %d %s", info.Mode(), info.Size(), entry.Name()),
+		)
 	}
 
 	return files, nil
