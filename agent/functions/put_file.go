@@ -3,6 +3,7 @@ package functions
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 const FuncPutFile = "put_file"
@@ -40,6 +41,11 @@ type PutFileInput struct {
 }
 
 func PutFile(input PutFileInput) error {
+	baseDir := filepath.Dir(input.OutputPath)
+	if err := os.MkdirAll(baseDir, 0755); err != nil {
+		return fmt.Errorf("mkdir all %s error: %w", baseDir, err)
+	}
+
 	f, err := os.Create(input.OutputPath)
 	if err != nil {
 		return fmt.Errorf("putting %s: %w", input.OutputPath, err)
