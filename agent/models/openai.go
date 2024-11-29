@@ -6,6 +6,7 @@ import (
 
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
+
 	"github/clover0/issue-agent/functions"
 	"github/clover0/issue-agent/logger"
 	"github/clover0/issue-agent/step"
@@ -25,21 +26,24 @@ func NewOpenAI(logger logger.Logger, apiKey string) OpenAI {
 	}
 }
 
-func (o OpenAI) StartCompletion(ctx context.Context, prompt string, functions []functions.Function) (*openai.ChatCompletion, openai.ChatCompletionNewParams, error) {
+type StartCompletionInput struct {
+	Model        string
+	SystemPrompt string
+}
+
+func (o OpenAI) StartCompletion(ctx context.Context, input StartCompletionInput, functions []functions.Function) (*openai.ChatCompletion, openai.ChatCompletionNewParams, error) {
 	toolFuncs := make([]openai.ChatCompletionToolParam, len(functions))
 	for i, f := range functions {
 		toolFuncs[i] = openai.ChatCompletionToolParam{
 			Function: openai.F(f.ToFunctionCalling()),
 			Type:     openai.F(openai.ChatCompletionToolTypeFunction),
 		}
-
 	}
 
 	params := openai.ChatCompletionNewParams{
-		// TODO: selectable model
-		Model: openai.F(openai.ChatModelGPT4o2024_08_06),
+		Model: openai.F(input.Model),
 		Messages: openai.F([]openai.ChatCompletionMessageParamUnion{
-			openai.SystemMessage(prompt),
+			openai.SystemMessage(input.SystemPrompt),
 		}),
 		Temperature: openai.F(0.0),
 		Tools:       openai.F(toolFuncs),
@@ -103,7 +107,7 @@ func (o OpenAI) CompletionNextStep(_ context.Context, chat *openai.ChatCompletio
 	}
 
 	if choice.FinishReason == openai.ChatCompletionChoicesFinishReasonLength {
-		return step.NewUnrecoverableStep()
+		return step.NewUnrecoverableStep(fmt.Errorf("chat completion length error"))
 	}
 
 	return step.NewUnknownStep()
