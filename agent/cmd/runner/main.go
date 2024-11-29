@@ -65,12 +65,14 @@ func main() {
 	//lo := logger.NewDefaultLogger()
 	lo := logger.NewPrinter()
 
-	var temp string
+	var tmplt string
+	var issueNum int
 
-	flag.StringVar(&temp, "template", "", "prompt template path")
+	flag.StringVar(&tmplt, "template", "", "prompt template path")
+	flag.IntVar(&issueNum, "github_issue_number", -1, "GitHub issue number")
 	flag.Parse()
 
-	y, err := prompt.LoadPromptTemplateFromYAML(temp)
+	y, err := prompt.LoadPromptTemplateFromYAML(tmplt)
 	if err != nil {
 		panic(err)
 	}
@@ -79,7 +81,7 @@ func main() {
 
 	issLoader := loader.NewGitHub(gh)
 	ctx := context.Background()
-	iss, err := issLoader.GetIssue(ctx, githubOwner, githubRepository, 5)
+	iss, err := issLoader.GetIssue(ctx, githubOwner, githubRepository, issueNum)
 	if err != nil {
 		panic(err)
 	}
