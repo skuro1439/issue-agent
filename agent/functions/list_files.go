@@ -37,16 +37,20 @@ type ListFilesInput struct {
 }
 
 func ListFiles(input ListFilesInput) ([]string, error) {
+	if _, err := os.Stat(input.Path); os.IsNotExist(err) {
+		return nil, fmt.Errorf("%s does not exist: %w", input.Path, err)
+	}
+
 	entries, err := os.ReadDir(input.Path)
 	if err != nil {
-		return []string{}, fmt.Errorf("read dir error: %w", err)
+		return nil, fmt.Errorf("can't read directory at %sr: %w", input.Path, err)
 	}
 
 	var files []string
 	for _, entry := range entries {
 		info, err := entry.Info()
 		if err != nil {
-			return []string{}, fmt.Errorf("get file info error: %w", err)
+			return nil, fmt.Errorf("get file info error: %w", err)
 		}
 
 		files = append(files,
