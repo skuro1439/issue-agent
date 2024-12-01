@@ -1,5 +1,5 @@
-# Software Task Agent
-Agents that, given an assignment, produce work products in the repository.
+# GitHub Issue Agent
+Agent that, given an assignment, produces work products in the repository.
 
 
 ## Models
