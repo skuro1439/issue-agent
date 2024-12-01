@@ -4,14 +4,17 @@ import (
 	"io"
 	"log"
 	"os"
+
+	"github/clover0/github-issue-agent/store"
 )
 
 const FuncOpenFile = "open_file"
 
 func NewOpenFileFunction() Function {
 	f := Function{
-		Name:        FuncOpenFile,
-		Description: "Open the file",
+		Name: FuncOpenFile,
+
+		Description: "Open the file full content",
 		Func:        OpenFile,
 		Parameters: map[string]interface{}{
 			"type": "object",
@@ -31,18 +34,18 @@ func NewOpenFileFunction() Function {
 	return f
 }
 
-type File struct {
-	Content string
-}
-
 type OpenFileInput struct {
 	Path string
 }
 
-func OpenFile(input OpenFileInput) (File, error) {
+func OpenFile(input OpenFileInput) (store.File, error) {
+	if err := guardPath(input.Path); err != nil {
+		return store.File{}, err
+	}
+
 	file, err := os.Open(input.Path)
 	if err != nil {
-		return File{}, err
+		return store.File{}, err
 	}
 	defer file.Close()
 
@@ -51,5 +54,8 @@ func OpenFile(input OpenFileInput) (File, error) {
 		log.Fatal(err)
 	}
 
-	return File{Content: string(data)}, nil
+	return store.File{
+		Path:    input.Path,
+		Content: string(data),
+	}, nil
 }

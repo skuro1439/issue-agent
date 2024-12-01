@@ -3,6 +3,8 @@ package functions
 import (
 	"fmt"
 	"os"
+
+	"github/clover0/github-issue-agent/store"
 )
 
 const FuncModifyFile = "modify_file"
@@ -39,16 +41,24 @@ type ModifyFileInput struct {
 	ContentText string `json:"content_text"`
 }
 
-func ModifyFile(input ModifyFileInput) error {
+func ModifyFile(input ModifyFileInput) (store.File, error) {
+	if err := guardPath(input.OutputPath); err != nil {
+		return store.File{}, err
+	}
+
+	var file store.File
 	f, err := os.Create(input.OutputPath)
 	if err != nil {
-		return fmt.Errorf("modify %s: %w", input.OutputPath, err)
+		return file, fmt.Errorf("modify %s: %w", input.OutputPath, err)
 	}
 	defer f.Close()
 
 	if _, err := f.WriteString(input.ContentText); err != nil {
-		return err
+		return file, err
 	}
 
-	return nil
+	return store.File{
+		Path:    input.OutputPath,
+		Content: input.ContentText,
+	}, nil
 }

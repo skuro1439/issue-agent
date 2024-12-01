@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github/clover0/github-issue-agent/store"
 )
 
 const FuncPutFile = "put_file"
@@ -40,21 +42,29 @@ type PutFileInput struct {
 	ContentText string `json:"content_text"`
 }
 
-func PutFile(input PutFileInput) error {
+func PutFile(input PutFileInput) (store.File, error) {
+	if err := guardPath(input.OutputPath); err != nil {
+		return store.File{}, err
+	}
+
+	var file store.File
 	baseDir := filepath.Dir(input.OutputPath)
 	if err := os.MkdirAll(baseDir, 0755); err != nil {
-		return fmt.Errorf("mkdir all %s error: %w", baseDir, err)
+		return file, fmt.Errorf("mkdir all %s error: %w", baseDir, err)
 	}
 
 	f, err := os.Create(input.OutputPath)
 	if err != nil {
-		return fmt.Errorf("putting %s: %w", input.OutputPath, err)
+		return file, fmt.Errorf("putting %s: %w", input.OutputPath, err)
 	}
 	defer f.Close()
 
 	if _, err := f.WriteString(input.ContentText); err != nil {
-		return err
+		return file, err
 	}
 
-	return nil
+	return store.File{
+		Path:    input.OutputPath,
+		Content: input.ContentText,
+	}, nil
 }

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/openai/openai-go"
+	"github/clover0/github-issue-agent/store"
 )
 
 func init() {
@@ -76,7 +77,7 @@ func SetSubmitFiles(fn SubmitFilesCallerType) FunctionOption {
 	}
 }
 
-func ExecFunction(funcName FuncName, argsJson string, optArg ...FunctionOption) (string, error) {
+func ExecFunction(store *store.Store, funcName FuncName, argsJson string, optArg ...FunctionOption) (string, error) {
 	option := &optionalArg{}
 	for _, o := range optArg {
 		o(option)
@@ -112,10 +113,11 @@ func ExecFunction(funcName FuncName, argsJson string, optArg ...FunctionOption) 
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)
 		}
-		err := PutFile(input)
+		file, err := PutFile(input)
 		if err != nil {
 			return "", err
 		}
+		StoreFileAfterPutFile(store, file)
 		return defaultSuccessReturning, nil
 
 	case FuncModifyFile:
@@ -124,10 +126,11 @@ func ExecFunction(funcName FuncName, argsJson string, optArg ...FunctionOption) 
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)
 		}
-		err := ModifyFile(input)
+		file, err := ModifyFile(input)
 		if err != nil {
 			return "", err
 		}
+		StoreFileAfterModifyFile(store, file)
 		return defaultSuccessReturning, nil
 
 	case FuncSubmitFiles:
