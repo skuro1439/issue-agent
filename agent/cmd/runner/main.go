@@ -2,18 +2,18 @@ package main
 
 import (
 	"context"
-	"github/clover0/issue-agent/config/cli"
-	"github/clover0/issue-agent/models"
+	"github/clover0/github-issue-agent/config/cli"
+	"github/clover0/github-issue-agent/models"
 	"os"
 
 	"github.com/google/go-github/v66/github"
 
-	"github/clover0/issue-agent/agent"
-	"github/clover0/issue-agent/functions"
-	"github/clover0/issue-agent/functions/agithub"
-	"github/clover0/issue-agent/loader"
-	"github/clover0/issue-agent/logger"
-	"github/clover0/issue-agent/prompt"
+	"github/clover0/github-issue-agent/agent"
+	"github/clover0/github-issue-agent/functions"
+	"github/clover0/github-issue-agent/functions/agithub"
+	"github/clover0/github-issue-agent/loader"
+	"github/clover0/github-issue-agent/logger"
+	"github/clover0/github-issue-agent/prompt"
 )
 
 func newGitHub() *github.Client {

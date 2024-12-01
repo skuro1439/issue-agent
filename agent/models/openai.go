@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
-	"github/clover0/issue-agent/agent"
+	"github/clover0/github-issue-agent/agent"
 
-	"github/clover0/issue-agent/logger"
-	"github/clover0/issue-agent/step"
+	"github/clover0/github-issue-agent/logger"
+	"github/clover0/github-issue-agent/step"
 )
 
 type OpenAI struct {

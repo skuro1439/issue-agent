@@ -2,7 +2,7 @@ package step
 
 import (
 	"fmt"
-	"github/clover0/issue-agent/functions"
+	"github/clover0/github-issue-agent/functions"
 )
 
 type DoType string

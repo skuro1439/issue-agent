@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"text/template"
 
-	"github/clover0/issue-agent/loader"
+	"github/clover0/github-issue-agent/loader"
 )
 
 type Prompt struct {

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 
-	"github/clover0/issue-agent/functions"
-	"github/clover0/issue-agent/logger"
-	"github/clover0/issue-agent/prompt"
-	"github/clover0/issue-agent/step"
+	"github/clover0/github-issue-agent/functions"
+	"github/clover0/github-issue-agent/logger"
+	"github/clover0/github-issue-agent/prompt"
+	"github/clover0/github-issue-agent/step"
 )
 
 type AgentLike interface {
