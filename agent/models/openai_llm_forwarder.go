@@ -7,16 +7,14 @@ import (
 	"github/clover0/github-issue-agent/agent"
 	"github/clover0/github-issue-agent/functions"
 	"github/clover0/github-issue-agent/logger"
-	"github/clover0/github-issue-agent/prompt"
 	"github/clover0/github-issue-agent/step"
 )
 
 type OpenAILLMForwarder struct {
 	openai OpenAI
-	prompt prompt.Prompt
 }
 
-func NewOpenAILLMForwarder(l logger.Logger, prompt prompt.Prompt) agent.LLMForwarder {
+func NewOpenAILLMForwarder(l logger.Logger) agent.LLMForwarder {
 	apiKey, ok := os.LookupEnv("OPENAI_API_KEY")
 	if !ok {
 		panic("OPENAI_API_KEY is not set")
@@ -24,7 +22,6 @@ func NewOpenAILLMForwarder(l logger.Logger, prompt prompt.Prompt) agent.LLMForwa
 
 	return OpenAILLMForwarder{
 		openai: NewOpenAI(l, apiKey),
-		prompt: prompt,
 	}
 }
 
@@ -33,8 +30,8 @@ func (o OpenAILLMForwarder) StartForward(input agent.StartCompletionInput) ([]ag
 		context.TODO(),
 		agent.StartCompletionInput{
 			Model:           input.Model,
-			SystemPrompt:    o.prompt.SystemPrompt,
-			StartUserPrompt: o.prompt.StartUserPrompt,
+			SystemPrompt:    input.SystemPrompt,
+			StartUserPrompt: input.StartUserPrompt,
 			Functions:       functions.AllFunctions(),
 		},
 	)

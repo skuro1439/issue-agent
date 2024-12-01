@@ -5,6 +5,8 @@ import (
 	"github/clover0/github-issue-agent/functions"
 )
 
+// TODO: Step owned Agent
+
 type DoType string
 type JSONString string
 
@@ -26,6 +28,9 @@ type Step struct {
 	ReturnToLLMContexts []ReturnToLLMContext
 	FunctionContexts    []FunctionContext
 	UnrecoverableErr    error
+
+	// TODO: data modeling
+	LastOutput string
 }
 
 type ReturnToLLMContext struct {
@@ -66,8 +71,11 @@ func NewExecStep(fnsInput []FunctionsInput) Step {
 	}
 }
 
-func NewWaitingInstructionStep() Step {
-	return Step{Do: WaitingInstruction}
+func NewWaitingInstructionStep(output string) Step {
+	return Step{
+		Do:         WaitingInstruction,
+		LastOutput: output,
+	}
 }
 
 func NewUnknownStep() Step {

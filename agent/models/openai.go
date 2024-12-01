@@ -200,7 +200,7 @@ func (o OpenAI) CompletionNextStep(_ context.Context, history []agent.LLMMessage
 
 	switch lastMsg.FinishReason {
 	case agent.FinishStop:
-		return step.NewWaitingInstructionStep()
+		return step.NewWaitingInstructionStep(lastMsg.RawContent)
 	case agent.FinishToolCalls:
 		var input []step.FunctionsInput
 		for _, v := range lastMsg.ReturnedToolCalls {

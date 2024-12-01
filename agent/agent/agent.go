@@ -3,7 +3,7 @@ package agent
 import (
 	"context"
 	"fmt"
-	"log"
+	"github/clover0/github-issue-agent/store"
 
 	"github/clover0/github-issue-agent/functions"
 	"github/clover0/github-issue-agent/logger"
@@ -16,34 +16,41 @@ type AgentLike interface {
 }
 
 type Agent struct {
+	name                string
 	parameter           Parameter
 	currentStep         step.Step
 	logg                logger.Logger
 	submitServiceCaller functions.SubmitFilesCallerType
 	llmForwarder        LLMForwarder
-	goal                string
 	prompt              prompt.Prompt
+	history             []LLMMessage
+	store               *store.Store
 }
 
 func NewAgent(
 	parameter Parameter,
+	name string,
 	logg logger.Logger,
 	submitServiceCaller functions.SubmitFilesCallerType,
 	prompt prompt.Prompt,
 	forwarder LLMForwarder,
+	store *store.Store,
 ) Agent {
 	return Agent{
+		name:                name,
 		parameter:           parameter,
 		currentStep:         step.Step{},
 		logg:                logg,
 		submitServiceCaller: submitServiceCaller,
 		prompt:              prompt,
 		llmForwarder:        forwarder,
+		store:               store,
 	}
 }
 
-func (a *Agent) Work() error {
+func (a *Agent) Work() (lastOutput string, err error) {
 	ctx := context.Background()
+	a.logg.Info("[%s]start agent work\n", a.name)
 
 	completionInput := StartCompletionInput{
 		Model:           a.parameter.Model,
@@ -54,8 +61,9 @@ func (a *Agent) Work() error {
 
 	history, err := a.llmForwarder.StartForward(completionInput)
 	if err != nil {
-		return fmt.Errorf("start llm forward error: %w", err)
+		return lastOutput, fmt.Errorf("start llm forward error: %w", err)
 	}
+	a.updateHistory(history)
 
 	a.currentStep = a.llmForwarder.ForwardStep(ctx, history)
 
@@ -70,11 +78,11 @@ func (a *Agent) Work() error {
 
 		switch a.currentStep.Do {
 		case step.Exec:
-			// ForwardExec
 			var input []step.ReturnToLLMInput
 			for _, fnCtx := range a.currentStep.FunctionContexts {
 				var returningStr string
 				returningStr, err = functions.ExecFunction(
+					a.store,
 					fnCtx.Function.Name,
 					fnCtx.FunctionArgs.String(),
 					functions.SetSubmitFiles(
@@ -96,21 +104,38 @@ func (a *Agent) Work() error {
 		case step.ReturnToLLM:
 			history, err = a.llmForwarder.ForwardLLM(ctx, completionInput, a.currentStep.ReturnToLLMContexts, history)
 			if err != nil {
-				log.Fatalf("unrecoverable ContinueCompletion: %s", err)
+				a.logg.Error("unrecoverable ContinueCompletion: %s\n", err)
+				return lastOutput, err
 			}
+			a.updateHistory(history)
 			a.currentStep = a.llmForwarder.ForwardStep(ctx, history)
-			a.logg.Debug("end step return to LLM")
+			a.logg.Debug("end step return to LLM\n")
 
 		case step.WaitingInstruction:
-			a.logg.Debug("finish instruction")
+			a.logg.Debug("finish instruction\n")
+			lastOutput = a.currentStep.LastOutput
 			loop = false
 			break
 
 		case step.Unrecoverable, step.Unknown:
-			log.Fatalf(fmt.Sprintf("unnrecoverable error: %s", a.currentStep.UnrecoverableErr))
+			a.logg.Error("unrecoverable error: %s\n", a.currentStep.UnrecoverableErr)
+			return lastOutput, err
 		default:
-			log.Fatalf("does not exist step type")
+			a.logg.Error("does not exist step type\n")
+			return lastOutput, err
 		}
 	}
-	return nil
+	return lastOutput, nil
+}
+
+func (a *Agent) updateHistory(history []LLMMessage) {
+	a.history = history
+}
+
+func (a *Agent) History() []LLMMessage {
+	return a.history
+}
+
+func (a *Agent) ChangedFiles() []store.File {
+	return a.store.ChangedFiles()
 }
