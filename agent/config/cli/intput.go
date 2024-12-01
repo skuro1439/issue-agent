@@ -22,7 +22,7 @@ func ParseInput() (Inputs, error) {
 
 	flag.StringVar(&cliIn.Model, "model", "gpt-4o", "Prompt template path")
 	flag.IntVar(&cliIn.MaxSteps, "max_steps", 100, "Max steps for the agent to run. Avoid infinite loop.")
-	flag.StringVar(&cliIn.Template, "template", "./default_prompt_ja.yaml", "Prompt template path")
+	flag.StringVar(&cliIn.Template, "template", "", "Prompt template path. default is `config/template/default_prompt_ja.yaml`")
 	flag.StringVar(&cliIn.RepositoryOwner, "repository_owner", "", "GitHubLoader Repository owner")
 	flag.StringVar(&cliIn.Repository, "repository", "", "Working at GitHubLoader Repository name")
 	flag.StringVar(&cliIn.GithubIssueNumber, "github_issue_number", "", "GitHubLoader issue number")

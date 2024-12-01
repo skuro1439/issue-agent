@@ -28,7 +28,6 @@ func NewOpenAILLMForwarder(l logger.Logger, prompt prompt.Prompt) agent.LLMForwa
 	}
 }
 
-// TODO: refactor input
 func (o OpenAILLMForwarder) StartForward(input agent.StartCompletionInput) ([]agent.LLMMessage, error) {
 	return o.openai.StartCompletion(
 		context.TODO(),

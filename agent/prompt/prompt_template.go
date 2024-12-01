@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"gopkg.in/yaml.v3"
+
+	"github/clover0/github-issue-agent/config/template"
 )
 
 type PromptTemplate struct {
@@ -15,17 +17,21 @@ type PromptTemplate struct {
 func LoadPromptTemplateFromYAML(filePath string) (PromptTemplate, error) {
 	var pt PromptTemplate
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		return pt, err
+	var data []byte
+	if filePath == "" {
+		data = template.DefaultTemplate()
+	} else {
+		file, err := os.Open(filePath)
+		if err != nil {
+			return pt, err
+		}
+		data, err = io.ReadAll(file)
+		if err != nil {
+			return pt, err
+		}
 	}
 
-	data, err := io.ReadAll(file)
-	if err != nil {
-		return pt, err
-	}
-
-	err = yaml.Unmarshal(data, &pt)
+	err := yaml.Unmarshal(data, &pt)
 	if err != nil {
 		return pt, err
 	}
