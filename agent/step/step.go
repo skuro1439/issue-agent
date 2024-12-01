@@ -30,6 +30,7 @@ type Step struct {
 
 type ReturnToLLMContext struct {
 	ToolCallerID string // TODO: non OpenAI dependency
+	ToolName     string
 	Content      string
 }
 
@@ -82,6 +83,7 @@ func NewUnrecoverableStep(err error) Step {
 
 type ReturnToLLMInput struct {
 	ToolCallerID string // TODO: non OpenAI dependency
+	ToolName     string
 	Content      string
 }
 
@@ -90,6 +92,7 @@ func NewReturnToLLMStep(input []ReturnToLLMInput) Step {
 	for _, v := range input {
 		contexts = append(contexts, ReturnToLLMContext{
 			ToolCallerID: v.ToolCallerID,
+			ToolName:     v.ToolName,
 			Content:      v.Content,
 		})
 	}
