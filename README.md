@@ -11,20 +11,6 @@ Only pull requests to GitHub are supported.
 
 
 ## Usage
-```shell
-GITHUB_TOKEN="your GitHub Token" \
-OPENAI_API_KEY="your OpenAI API key" \
-LOG_LEVEL=debug \
-go run cmd/runner/main.go \
-  -template {propmpt template path} \
-  -github_issue_number {GitHub issue number} \
-  -repository_owner {repository owner} \
-  -repository {repository name} \
-  --model {model version} \
-  -base_branch {base branch} \
-  -workdir {your workdir}
-```
-
 
 ### Example run
 
@@ -32,20 +18,25 @@ go run cmd/runner/main.go \
   - e.g)
   - At `example-repository` repository
   - GitHub Issue Number 123 in that GitHub repository
-  - Local repository is `${HOME}/examples/example-repository`
+  - GitHub Repository `clover0/example-repository`
 1. Run Agent with parameters below run example
 ```shell
-GITHUB_TOKEN="your GitHub Token" \
-OPENAI_API_KEY="your OpenAI API key" \
-LOG_LEVEL=debug \
-go run cmd/runner/main.go \
-  -template ./agent/config/template/default_prompt_ja.yaml \
-  -github_issue_number 123 \
-  -repository_owner clover0 \
-  -repository example-repository \
-  --model gpt-4o \
-  -base_branch master \
-  -workdir ${HOME}/examples/example-repository
+docker compose run --rm \
+  -e GITHUB_TOKEN=$(gh auth token) \
+  -e OPENAI_API_KEY=${OPENAI_API_KEY} \
+  -e LOG_LEVEL=debug \
+  agent \
+  go run cmd/runner/main.go \
+    -github_issue_number 123 \
+    -clone_repository \
+    -repository_owner clover0 \
+    -repository example-repository \
+    -model gpt-4o \
+    -base_branch master \
+    -workdir /usr/local/repositories/example-repository \
+    -git_email email@example.com \
+    -git_name clover0
 ```
   - Working branch is created automatically
+  - Git clone at /usr/local/repositories
 1. Human review of work product by agent
