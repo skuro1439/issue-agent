@@ -14,7 +14,7 @@ type Prompt struct {
 	StartUserPrompt string
 }
 
-func BuildPrompt(promptTpl PromptTemplate, issueLoader loader.Loader, issueNumber string) (Prompt, error) {
+func BuildDeveloperPrompt(promptTpl PromptTemplate, issueLoader loader.Loader, issueNumber string) (Prompt, error) {
 	iss, err := issueLoader.LoadIssue(context.TODO(), issueNumber)
 	if err != nil {
 		panic(err)
@@ -24,7 +24,23 @@ func BuildPrompt(promptTpl PromptTemplate, issueLoader loader.Loader, issueNumbe
 		"issue":       iss.Content,
 		"issueNumber": issueNumber,
 	}
-	usrTpl, err := template.New("prompt").Parse(promptTpl.UserTemplate)
+
+	var prpt Prompt
+	for _, p := range promptTpl.Agents {
+		if p.Name == "developer" {
+			prpt = Prompt{
+				SystemPrompt:    p.SystemTemplate,
+				StartUserPrompt: p.UserTemplate,
+			}
+			break
+		}
+	}
+
+	if prpt.StartUserPrompt == "" {
+		return Prompt{}, fmt.Errorf("failed to find developer prompt. You must have  name=developer prompt in the prompt template")
+	}
+
+	usrTpl, err := template.New("prompt").Parse(prpt.StartUserPrompt)
 	if err != nil {
 		return Prompt{}, fmt.Errorf("failed to parse prompt template: %w", err)
 	}
@@ -35,7 +51,7 @@ func BuildPrompt(promptTpl PromptTemplate, issueLoader loader.Loader, issueNumbe
 	}
 
 	return Prompt{
-		SystemPrompt:    promptTpl.SystemTemplate,
+		SystemPrompt:    prpt.SystemPrompt,
 		StartUserPrompt: tplbuff.String(),
 	}, nil
 }
@@ -51,6 +67,10 @@ func BuildSecurityPrompt(promptTpl PromptTemplate, changedFilesPath []string) (P
 			}
 			break
 		}
+	}
+
+	if prpt.StartUserPrompt == "" {
+		return Prompt{}, fmt.Errorf("failed to find security prompt. You must have  name=security prompt in the prompt template")
 	}
 
 	tpl, err := template.New("prompt").Parse(prpt.StartUserPrompt)

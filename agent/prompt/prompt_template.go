@@ -10,9 +10,7 @@ import (
 )
 
 type PromptTemplate struct {
-	SystemTemplate string `yaml:"system_template"`
-	UserTemplate   string `yaml:"user_template"`
-	Agents         []struct {
+	Agents []struct {
 		Name           string `yaml:"name"`
 		SystemTemplate string `yaml:"system_prompt"`
 		UserTemplate   string `yaml:"user_prompt"`

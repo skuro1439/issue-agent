@@ -91,7 +91,7 @@ func RunStartingAgent(
 ) agent.Agent {
 	ctx := context.Background()
 
-	prompt, err := libprompt.BuildPrompt(promptTemplate, issLoader, cliIn.GithubIssueNumber)
+	prompt, err := libprompt.BuildDeveloperPrompt(promptTemplate, issLoader, cliIn.GithubIssueNumber)
 	if err != nil {
 		lo.Error("failed buld prompt: %s", err)
 		os.Exit(1)
