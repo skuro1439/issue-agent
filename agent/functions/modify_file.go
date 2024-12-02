@@ -11,9 +11,10 @@ const FuncModifyFile = "modify_file"
 
 func NewModifyFileFunction() Function {
 	f := Function{
-		Name:        FuncModifyFile,
-		Description: "Modify the file at output_path with the contents of content_text",
-		Func:        ModifyFile,
+		Name: FuncModifyFile,
+		Description: `Modify the file at output_path with the contents of content_text.
+Modified file must be full content including modified content`,
+		Func: ModifyFile,
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

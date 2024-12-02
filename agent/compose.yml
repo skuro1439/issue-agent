@@ -1,0 +1,15 @@
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/usr/local/agent
+      - agent-go-mod:/go/pkg/mod
+    networks:
+        - agent-net
+volumes:
+  agent-go-mod:
+networks:
+ agent-net:
+   driver: bridge

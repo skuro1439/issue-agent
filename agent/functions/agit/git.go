@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os/exec"
 	"time"
+
+	"github/clover0/github-issue-agent/logger"
 )
 
 const branchPrefix = "agent-"
@@ -12,57 +14,74 @@ func MakeBranchName() string {
 	return fmt.Sprintf("%s%d", branchPrefix, time.Now().UnixNano())
 }
 
-func GitStatus() (string, error) {
+func GitConfigLocal(lo logger.Logger, key, value string) (string, error) {
+	cmd := exec.Command("git", "config", "--local", key, value)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		lo.Error(string(output))
+		return "", err
+	}
+	lo.Info(string(output))
+
+	return string(output), err
+}
+
+func GitStatus(lo logger.Logger) (string, error) {
 	cmd := exec.Command("git", "status")
-
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		lo.Error(string(output))
 		return "", err
 	}
+	lo.Info(string(output))
 
 	return string(output), err
 }
 
-func GitSwitchCreate(branch string) (string, error) {
+func GitSwitchCreate(lo logger.Logger, branch string) (string, error) {
 	cmd := exec.Command("git", "switch", "-c", branch)
-
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		lo.Error(string(output))
 		return "", err
 	}
+	lo.Info(string(output))
 
 	return string(output), err
 }
 
-func GitAddAll() (string, error) {
+func GitAddAll(lo logger.Logger) (string, error) {
 	cmd := exec.Command("git", "add", ".")
-
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		lo.Error(string(output))
 		return "", err
 	}
+	lo.Info(string(output))
 
 	return string(output), err
 }
 
-func GitCommit(commit string) (string, error) {
+func GitCommit(lo logger.Logger, commit string) (string, error) {
 	cmd := exec.Command("git", "commit", "-m", commit)
-
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		lo.Error(string(output))
 		return "", err
 	}
+	lo.Info(string(output))
 
 	return string(output), err
 }
 
-func GitPushBranch(branch string) (string, error) {
+func GitPushBranch(lo logger.Logger, branch string) (string, error) {
 	cmd := exec.Command("git", "push", "--set-upstream", "origin", branch)
-
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		lo.Error(string(output))
 		return "", err
 	}
+	lo.Info(string(output))
 
 	return string(output), err
 }

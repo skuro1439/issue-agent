@@ -1,0 +1,3 @@
+FROM golang:1.23.3-bookworm
+
+WORKDIR /usr/local/agent
