@@ -74,14 +74,14 @@ func main() {
 
 	dataStore := store.NewStore()
 
-	startAgent := RunStartingAgent(promptTemplate, issLoader, cliIn, lo, gh, &dataStore)
+	startAgent := RunDeveloperAgent(promptTemplate, issLoader, cliIn, lo, gh, &dataStore)
 
 	RunSecurityAgent(promptTemplate, startAgent.ChangedFiles(), cliIn, lo, gh, &dataStore)
 
 	lo.Info("Agents finished successfully!")
 }
 
-func RunStartingAgent(
+func RunDeveloperAgent(
 	promptTemplate libprompt.PromptTemplate,
 	issLoader loader.Loader,
 	cliIn cli.Inputs,

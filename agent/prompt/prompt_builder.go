@@ -14,53 +14,40 @@ type Prompt struct {
 	StartUserPrompt string
 }
 
+func BuildRequirePrompt(promptTpl PromptTemplate, issueLoader loader.Loader, issueNumber string) (Prompt, error) {
+	iss, err := issueLoader.LoadIssue(context.TODO(), issueNumber)
+	if err != nil {
+		return Prompt{}, fmt.Errorf("failed to load issue: %w", err)
+	}
+
+	return BuildPrompt(promptTpl, "requirement", map[string]any{
+		"issue":       iss.Content,
+		"issueNumber": issueNumber,
+	})
+}
+
 func BuildDeveloperPrompt(promptTpl PromptTemplate, issueLoader loader.Loader, issueNumber string) (Prompt, error) {
 	iss, err := issueLoader.LoadIssue(context.TODO(), issueNumber)
 	if err != nil {
-		panic(err)
+		return Prompt{}, fmt.Errorf("failed to load issue: %w", err)
 	}
 
-	m := map[string]string{
+	return BuildPrompt(promptTpl, "developer", map[string]any{
 		"issue":       iss.Content,
 		"issueNumber": issueNumber,
-	}
-
-	var prpt Prompt
-	for _, p := range promptTpl.Agents {
-		if p.Name == "developer" {
-			prpt = Prompt{
-				SystemPrompt:    p.SystemTemplate,
-				StartUserPrompt: p.UserTemplate,
-			}
-			break
-		}
-	}
-
-	if prpt.StartUserPrompt == "" {
-		return Prompt{}, fmt.Errorf("failed to find developer prompt. You must have  name=developer prompt in the prompt template")
-	}
-
-	usrTpl, err := template.New("prompt").Parse(prpt.StartUserPrompt)
-	if err != nil {
-		return Prompt{}, fmt.Errorf("failed to parse prompt template: %w", err)
-	}
-
-	tplbuff := bytes.NewBuffer([]byte{})
-	if err := usrTpl.Execute(tplbuff, m); err != nil {
-		return Prompt{}, fmt.Errorf("failed to execute prompt template: %w", err)
-	}
-
-	return Prompt{
-		SystemPrompt:    prpt.SystemPrompt,
-		StartUserPrompt: tplbuff.String(),
-	}, nil
+	})
 }
 
-// TODO: separeting prompt from yaml
 func BuildSecurityPrompt(promptTpl PromptTemplate, changedFilesPath []string) (Prompt, error) {
+	return BuildPrompt(promptTpl, "security", map[string]any{
+		"filePaths": changedFilesPath,
+	})
+}
+
+func BuildPrompt(promptTpl PromptTemplate, templateName string, templateMap map[string]any) (Prompt, error) {
 	var prpt Prompt
 	for _, p := range promptTpl.Agents {
-		if p.Name == "security" {
+		if p.Name == templateName {
 			prpt = Prompt{
 				SystemPrompt:    p.SystemTemplate,
 				StartUserPrompt: p.UserTemplate,
@@ -70,7 +57,7 @@ func BuildSecurityPrompt(promptTpl PromptTemplate, changedFilesPath []string) (P
 	}
 
 	if prpt.StartUserPrompt == "" {
-		return Prompt{}, fmt.Errorf("failed to find security prompt. You must have  name=security prompt in the prompt template")
+		return Prompt{}, fmt.Errorf("failed to find %s prompt. You must have  name=%s prompt in the prompt template", templateName, templateName)
 	}
 
 	tpl, err := template.New("prompt").Parse(prpt.StartUserPrompt)
@@ -78,11 +65,8 @@ func BuildSecurityPrompt(promptTpl PromptTemplate, changedFilesPath []string) (P
 		return Prompt{}, fmt.Errorf("failed to parse prompt template: %w", err)
 	}
 
-	m := map[string]any{
-		"filePaths": changedFilesPath,
-	}
 	tplbuff := bytes.NewBuffer([]byte{})
-	if err := tpl.Execute(tplbuff, m); err != nil {
+	if err := tpl.Execute(tplbuff, templateMap); err != nil {
 		return Prompt{}, fmt.Errorf("failed to execute prompt template: %w", err)
 	}
 
