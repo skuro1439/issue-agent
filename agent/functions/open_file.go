@@ -10,7 +10,7 @@ import (
 
 const FuncOpenFile = "open_file"
 
-func NewOpenFileFunction() Function {
+func InitOpenFileFunction() Function {
 	f := Function{
 		Name: FuncOpenFile,
 

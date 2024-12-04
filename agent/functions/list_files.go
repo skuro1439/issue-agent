@@ -8,7 +8,7 @@ import (
 
 const FuncListFiles = "list_files"
 
-func NewListFilesFunction() Function {
+func InitListFilesFunction() Function {
 	f := Function{
 		Name:        FuncListFiles,
 		Description: "List the files within the directory like Unix ls command. Each line contains the file mode, size, and name",

@@ -12,11 +12,11 @@ import (
 )
 
 func init() {
-	NewOpenFileFunction()
-	NewListFilesFunction()
-	NewPutFileFunction()
-	NewModifyFileFunction()
-	NewSubmitFilesGitHubFunction()
+	InitOpenFileFunction()
+	InitListFilesFunction()
+	InitPutFileFunction()
+	InitModifyFileFunction()
+	InitSubmitFilesGitHubFunction()
 }
 
 type FuncName string
@@ -35,6 +35,7 @@ type Function struct {
 
 var functionsMap = map[string]Function{}
 
+// TODO: no dependent on openai-go
 func (f Function) ToFunctionCalling() openai.FunctionDefinitionParam {
 	return openai.FunctionDefinitionParam{
 		Name:        openai.F(f.Name.String()),
@@ -84,6 +85,7 @@ func ExecFunction(store *store.Store, funcName FuncName, argsJson string, optArg
 	}
 	switch funcName {
 	case FuncOpenFile:
+		// TODO: logger from context
 		fmt.Println("functions: do open_file")
 		input := OpenFileInput{}
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
@@ -121,7 +123,7 @@ func ExecFunction(store *store.Store, funcName FuncName, argsJson string, optArg
 		return defaultSuccessReturning, nil
 
 	case FuncModifyFile:
-		fmt.Println("functions: do change_file")
+		fmt.Println("functions: do modify_file")
 		input := ModifyFileInput{}
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)

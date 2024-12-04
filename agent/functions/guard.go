@@ -19,7 +19,7 @@ func guardPath(path string) error {
 	}
 
 	if strings.HasPrefix(path, "/") {
-		return fmt.Errorf("path %s starts with '/'", path)
+		return fmt.Errorf("path %s starts with '/', not allowed", path)
 	}
 
 	return nil

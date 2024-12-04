@@ -10,7 +10,7 @@ import (
 
 const FuncPutFile = "put_file"
 
-func NewPutFileFunction() Function {
+func InitPutFileFunction() Function {
 	f := Function{
 		Name:        FuncPutFile,
 		Description: "Put new content to the file",

@@ -9,7 +9,7 @@ import (
 
 const FuncModifyFile = "modify_file"
 
-func NewModifyFileFunction() Function {
+func InitModifyFileFunction() Function {
 	f := Function{
 		Name: FuncModifyFile,
 		Description: `Modify the file at output_path with the contents of content_text.

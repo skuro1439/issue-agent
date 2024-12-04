@@ -2,7 +2,7 @@ package functions
 
 const FuncSubmitFiles = "submit_files"
 
-func NewSubmitFilesGitHubFunction() Function {
+func InitSubmitFilesGitHubFunction() Function {
 	// TODO: selectable other method
 
 	f := Function{
