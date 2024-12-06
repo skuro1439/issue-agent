@@ -3,15 +3,20 @@ Agent that, given an assignment, produces work products in the repository.
 
 
 ## Models
-Only OpenAI models are supported.
+- OpenAI models
+  - gpt-4o
+  - gpt-4o-mini
+- Anthropic models
+  - claude-3-5-sonnet
+
+are supported.
 
 
 ## Work Product
-Only pull requests to GitHub are supported.
+Only GitHub pull requests are supported.
 
 
 ## Usage
-
 ### Example run
 
 1. Human decides what issue they want to resolve
@@ -24,6 +29,7 @@ Only pull requests to GitHub are supported.
 docker compose run --rm \
   -e GITHUB_TOKEN=$(gh auth token) \
   -e OPENAI_API_KEY=${OPENAI_API_KEY} \
+  -e ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY} \
   -e LOG_LEVEL=debug \
   agent \
   go run cmd/runner/main.go \
@@ -39,4 +45,5 @@ docker compose run --rm \
 ```
   - Working branch is created automatically
   - Git clone at /usr/local/repositories
+  - LLM OPENAI_API_KEY or ANTHROPIC_API_KEY is required
 1. Human review of work product by agent

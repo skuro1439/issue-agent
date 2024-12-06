@@ -6,8 +6,12 @@ services:
     volumes:
       - ./:/usr/local/agent
       - agent-go-mod:/go/pkg/mod
+    ports:
+      - "32345:2345"
     networks:
-        - agent-net
+      - agent-net
+    cap_add:
+      - SYS_PTRACE
 volumes:
   agent-go-mod:
 networks:
