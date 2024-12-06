@@ -43,6 +43,7 @@ func main() {
 			lo.Error("GITHUB_TOKEN is not set")
 			os.Exit(1)
 		}
+		lo.Debug("cloning repository...\n")
 		cmd := exec.Command("git", "clone", "--depth", "1",
 			fmt.Sprintf("https://oauth2:%s@github.com/%s/%s.git", token, cliIn.RepositoryOwner, cliIn.Repository),
 			cliIn.AgentWorkDir,
@@ -68,29 +69,80 @@ func main() {
 		os.Exit(1)
 	}
 
+	ctx := context.Background()
 	gh := newGitHub()
 
 	issLoader := loader.NewGitHubLoader(gh, cliIn.RepositoryOwner, cliIn.Repository)
+	submitServiceCaller := agithub.NewSubmitFileGitHubService(cliIn.RepositoryOwner, cliIn.Repository, gh, lo).
+		Caller(ctx, functions.SubmitFilesServiceInput{
+			BaseBranch: cliIn.BaseBranch,
+			GitEmail:   cliIn.GitEmail,
+			GitName:    cliIn.GitName,
+		})
 
 	dataStore := store.NewStore()
 
-	startAgent := RunDeveloperAgent(promptTemplate, issLoader, cliIn, lo, gh, &dataStore)
+	parameter := agent.Parameter{
+		MaxSteps: cliIn.MaxSteps,
+		Model:    cliIn.Model,
+	}
+	requirementAgent := RunRequirementAgent(promptTemplate, issLoader, submitServiceCaller, parameter, cliIn, lo, &dataStore)
 
-	RunSecurityAgent(promptTemplate, startAgent.ChangedFiles(), cliIn, lo, gh, &dataStore)
+	//developerAgent := RunDeveloperAgent(promptTemplate, issLoader, cliIn, lo, gh, &dataStore)
+	developer2Agent := RunDeveloper2Agent(promptTemplate, issLoader, submitServiceCaller, parameter, cliIn, lo, &dataStore,
+		requirementAgent.History()[len(requirementAgent.History())-1].RawContent,
+	)
+
+	//RunSecurityAgent(promptTemplate, developerAgent.ChangedFiles(), cliIn, lo, gh, &dataStore)
+	RunSecurityAgent(promptTemplate, developer2Agent.ChangedFiles(), submitServiceCaller, parameter, lo, &dataStore)
 
 	lo.Info("Agents finished successfully!")
+}
+
+func RunRequirementAgent(
+	promptTemplate libprompt.PromptTemplate,
+	issLoader loader.Loader,
+	submitServiceCaller functions.SubmitFilesCallerType,
+	parameter agent.Parameter,
+	cliIn cli.Inputs,
+	lo logger.Logger,
+	dataStore *store.Store,
+) agent.Agent {
+	prompt, err := libprompt.BuildRequirePrompt(promptTemplate, issLoader, cliIn.GithubIssueNumber)
+	if err != nil {
+		lo.Error("failed buld prompt: %s", err)
+		os.Exit(1)
+	}
+
+	ag := agent.NewAgent(
+		parameter,
+		"main",
+		lo,
+		submitServiceCaller,
+		prompt,
+		//models.NewOpenAILLMForwarder(lo),
+		models.NewAnthropicLLMForwarder(lo),
+		dataStore,
+	)
+
+	_, err = ag.Work()
+	if err != nil {
+		lo.Error("ag failed: %s", err)
+		os.Exit(1)
+	}
+
+	return ag
 }
 
 func RunDeveloperAgent(
 	promptTemplate libprompt.PromptTemplate,
 	issLoader loader.Loader,
+	submitServiceCaller functions.SubmitFilesCallerType,
+	parameter agent.Parameter,
 	cliIn cli.Inputs,
 	lo logger.Logger,
-	gh *github.Client,
 	dataStore *store.Store,
 ) agent.Agent {
-	ctx := context.Background()
-
 	prompt, err := libprompt.BuildDeveloperPrompt(promptTemplate, issLoader, cliIn.GithubIssueNumber)
 	if err != nil {
 		lo.Error("failed buld prompt: %s", err)
@@ -98,20 +150,49 @@ func RunDeveloperAgent(
 	}
 
 	ag := agent.NewAgent(
-		agent.Parameter{
-			MaxSteps: cliIn.MaxSteps,
-			Model:    cliIn.Model,
-		},
+		parameter,
 		"main",
 		lo,
-		agithub.NewSubmitFileGitHubService(cliIn.RepositoryOwner, cliIn.Repository, gh, lo).
-			Caller(ctx, functions.SubmitFilesServiceInput{
-				BaseBranch: cliIn.BaseBranch,
-				GitEmail:   cliIn.GitEmail,
-				GitName:    cliIn.GitName,
-			}),
+		submitServiceCaller,
 		prompt,
-		models.NewOpenAILLMForwarder(lo),
+		//models.NewOpenAILLMForwarder(lo),
+		models.NewAnthropicLLMForwarder(lo),
+		dataStore,
+	)
+
+	_, err = ag.Work()
+	if err != nil {
+		lo.Error("ag failed: %s", err)
+		os.Exit(1)
+	}
+
+	return ag
+}
+
+func RunDeveloper2Agent(
+	promptTemplate libprompt.PromptTemplate,
+	issLoader loader.Loader,
+	submitServiceCaller functions.SubmitFilesCallerType,
+	parameter agent.Parameter,
+	cliIn cli.Inputs,
+	lo logger.Logger,
+	dataStore *store.Store,
+	instruction string,
+) agent.Agent {
+	prompt, err := libprompt.BuildDeveloper2Prompt(promptTemplate, issLoader, cliIn.GithubIssueNumber, instruction)
+	if err != nil {
+		lo.Error("failed build prompt: %s", err)
+		os.Exit(1)
+	}
+
+	ag := agent.NewAgent(
+		parameter,
+		"main",
+		lo,
+		submitServiceCaller,
+		prompt,
+		//models.NewOpenAILLMForwarder(lo),
+		models.NewAnthropicLLMForwarder(lo),
 		dataStore,
 	)
 
@@ -127,12 +208,11 @@ func RunDeveloperAgent(
 func RunSecurityAgent(
 	promptTemplate libprompt.PromptTemplate,
 	changedFiles []store.File,
-	cliIn cli.Inputs,
+	submitServiceCaller functions.SubmitFilesCallerType,
+	parameter agent.Parameter,
 	lo logger.Logger,
-	gh *github.Client,
 	dataStore *store.Store,
 ) agent.Agent {
-	ctx := context.Background()
 	var changedFilePath []string
 	for _, f := range changedFiles {
 		changedFilePath = append(changedFilePath, f.Path)
@@ -144,20 +224,13 @@ func RunSecurityAgent(
 		os.Exit(1)
 	}
 	ag := agent.NewAgent(
-		agent.Parameter{
-			MaxSteps: cliIn.MaxSteps,
-			Model:    cliIn.Model,
-		},
+		parameter,
 		"securityAgent",
 		lo,
-		agithub.NewSubmitFileGitHubService(cliIn.RepositoryOwner, cliIn.Repository, gh, lo).
-			Caller(ctx, functions.SubmitFilesServiceInput{
-				BaseBranch: cliIn.BaseBranch,
-				GitEmail:   cliIn.GitEmail,
-				GitName:    cliIn.GitName,
-			}),
+		submitServiceCaller,
 		securityPrompt,
-		models.NewOpenAILLMForwarder(lo),
+		//models.NewOpenAILLMForwarder(lo),
+		models.NewAnthropicLLMForwarder(lo),
 		dataStore,
 	)
 

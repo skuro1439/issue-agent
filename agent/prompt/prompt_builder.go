@@ -38,10 +38,29 @@ func BuildDeveloperPrompt(promptTpl PromptTemplate, issueLoader loader.Loader, i
 	})
 }
 
-func BuildSecurityPrompt(promptTpl PromptTemplate, changedFilesPath []string) (Prompt, error) {
-	return BuildPrompt(promptTpl, "security", map[string]any{
-		"filePaths": changedFilesPath,
+func BuildDeveloper2Prompt(promptTpl PromptTemplate, issueLoader loader.Loader, issueNumber string, instruction string) (Prompt, error) {
+	iss, err := issueLoader.LoadIssue(context.TODO(), issueNumber)
+	if err != nil {
+		return Prompt{}, fmt.Errorf("failed to load issue: %w", err)
+	}
+
+	return BuildPrompt(promptTpl, "developer_2", map[string]any{
+		"issue":       iss.Content,
+		"issueNumber": issueNumber,
+		"instruction": instruction,
 	})
+}
+
+func BuildSecurityPrompt(promptTpl PromptTemplate, changedFilesPath []string) (Prompt, error) {
+	m := make(map[string]any)
+
+	m["filePaths"] = changedFilesPath
+
+	if len(changedFilesPath) == 0 {
+		m["noFiles"] = "no changed files"
+	}
+
+	return BuildPrompt(promptTpl, "security", m)
 }
 
 func BuildPrompt(promptTpl PromptTemplate, templateName string, templateMap map[string]any) (Prompt, error) {
