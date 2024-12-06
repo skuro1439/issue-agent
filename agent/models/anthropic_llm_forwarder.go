@@ -282,7 +282,6 @@ func convertAnthoropicStopReasonToReason(reason string) agent.MessageFinishReaso
 		return agent.FinishStop
 	case "too_use":
 		return agent.FinishToolCalls
-
 	default:
 		return agent.FinishToolCalls
 	}

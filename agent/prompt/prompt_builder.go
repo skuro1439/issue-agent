@@ -14,7 +14,7 @@ type Prompt struct {
 	StartUserPrompt string
 }
 
-func BuildRequirePrompt(promptTpl PromptTemplate, issueLoader loader.Loader, issueNumber string) (Prompt, error) {
+func BuildRequirementPrompt(promptTpl PromptTemplate, issueLoader loader.Loader, issueNumber string) (Prompt, error) {
 	iss, err := issueLoader.LoadIssue(context.TODO(), issueNumber)
 	if err != nil {
 		return Prompt{}, fmt.Errorf("failed to load issue: %w", err)
@@ -76,7 +76,7 @@ func BuildPrompt(promptTpl PromptTemplate, templateName string, templateMap map[
 	}
 
 	if prpt.StartUserPrompt == "" {
-		return Prompt{}, fmt.Errorf("failed to find %s prompt. You must have  name=%s prompt in the prompt template", templateName, templateName)
+		return Prompt{}, fmt.Errorf("failed to find %s prompt. you must have  name=%s prompt in the prompt template", templateName, templateName)
 	}
 
 	tpl, err := template.New("prompt").Parse(prpt.StartUserPrompt)

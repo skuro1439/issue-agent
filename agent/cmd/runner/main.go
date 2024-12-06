@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"os/exec"
 
 	"github.com/google/go-github/v66/github"
 
@@ -31,30 +29,17 @@ func main() {
 	//lo := logger.NewDefaultLogger()
 	lo := logger.NewPrinter()
 
+	llmForwarder := models.NewAnthropicLLMForwarder(lo)
+
 	cliIn, err := cli.ParseInput()
 	if err != nil {
 		lo.Error("failed to parse input: %s", err)
 		os.Exit(1)
 	}
 
-	if cliIn.CloneRepository {
-		token, ok := os.LookupEnv("GITHUB_TOKEN")
-		if !ok {
-			lo.Error("GITHUB_TOKEN is not set")
-			os.Exit(1)
-		}
-		lo.Debug("cloning repository...\n")
-		cmd := exec.Command("git", "clone", "--depth", "1",
-			fmt.Sprintf("https://oauth2:%s@github.com/%s/%s.git", token, cliIn.RepositoryOwner, cliIn.Repository),
-			cliIn.AgentWorkDir,
-		)
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			lo.Error(string(output))
-			lo.Error("failed to clone repository: %s", err)
-			os.Exit(1)
-		}
-		lo.Info("cloned repository successfully")
+	if err := agithub.CloneRepository(lo, cliIn); err != nil {
+		lo.Error("failed to clone repository")
+		os.Exit(1)
 	}
 
 	// TODO: no dependency with changing directory
@@ -86,15 +71,14 @@ func main() {
 		MaxSteps: cliIn.MaxSteps,
 		Model:    cliIn.Model,
 	}
-	requirementAgent := RunRequirementAgent(promptTemplate, issLoader, submitServiceCaller, parameter, cliIn, lo, &dataStore)
+	requirementAgent := RunRequirementAgent(promptTemplate, issLoader, submitServiceCaller, parameter, cliIn, lo, &dataStore, llmForwarder)
 
-	//developerAgent := RunDeveloperAgent(promptTemplate, issLoader, cliIn, lo, gh, &dataStore)
+	//developerAgent := RunDeveloperAgent(promptTemplate, issLoader, cliIn, lo, gh, &dataStore, llmForwarder)
 	developer2Agent := RunDeveloper2Agent(promptTemplate, issLoader, submitServiceCaller, parameter, cliIn, lo, &dataStore,
-		requirementAgent.History()[len(requirementAgent.History())-1].RawContent,
+		requirementAgent.History()[len(requirementAgent.History())-1].RawContent, llmForwarder,
 	)
 
-	//RunSecurityAgent(promptTemplate, developerAgent.ChangedFiles(), cliIn, lo, gh, &dataStore)
-	RunSecurityAgent(promptTemplate, developer2Agent.ChangedFiles(), submitServiceCaller, parameter, lo, &dataStore)
+	RunSecurityAgent(promptTemplate, developer2Agent.ChangedFiles(), submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
 
 	lo.Info("Agents finished successfully!")
 }
@@ -107,8 +91,9 @@ func RunRequirementAgent(
 	cliIn cli.Inputs,
 	lo logger.Logger,
 	dataStore *store.Store,
+	llmForwarder agent.LLMForwarder,
 ) agent.Agent {
-	prompt, err := libprompt.BuildRequirePrompt(promptTemplate, issLoader, cliIn.GithubIssueNumber)
+	prompt, err := libprompt.BuildRequirementPrompt(promptTemplate, issLoader, cliIn.GithubIssueNumber)
 	if err != nil {
 		lo.Error("failed buld prompt: %s", err)
 		os.Exit(1)
@@ -120,8 +105,7 @@ func RunRequirementAgent(
 		lo,
 		submitServiceCaller,
 		prompt,
-		//models.NewOpenAILLMForwarder(lo),
-		models.NewAnthropicLLMForwarder(lo),
+		llmForwarder,
 		dataStore,
 	)
 
@@ -142,10 +126,11 @@ func RunDeveloperAgent(
 	cliIn cli.Inputs,
 	lo logger.Logger,
 	dataStore *store.Store,
+	llmForwarder agent.LLMForwarder,
 ) agent.Agent {
 	prompt, err := libprompt.BuildDeveloperPrompt(promptTemplate, issLoader, cliIn.GithubIssueNumber)
 	if err != nil {
-		lo.Error("failed buld prompt: %s", err)
+		lo.Error("failed build prompt: %s", err)
 		os.Exit(1)
 	}
 
@@ -155,8 +140,7 @@ func RunDeveloperAgent(
 		lo,
 		submitServiceCaller,
 		prompt,
-		//models.NewOpenAILLMForwarder(lo),
-		models.NewAnthropicLLMForwarder(lo),
+		llmForwarder,
 		dataStore,
 	)
 
@@ -178,6 +162,7 @@ func RunDeveloper2Agent(
 	lo logger.Logger,
 	dataStore *store.Store,
 	instruction string,
+	llmForwarder agent.LLMForwarder,
 ) agent.Agent {
 	prompt, err := libprompt.BuildDeveloper2Prompt(promptTemplate, issLoader, cliIn.GithubIssueNumber, instruction)
 	if err != nil {
@@ -191,14 +176,13 @@ func RunDeveloper2Agent(
 		lo,
 		submitServiceCaller,
 		prompt,
-		//models.NewOpenAILLMForwarder(lo),
-		models.NewAnthropicLLMForwarder(lo),
+		llmForwarder,
 		dataStore,
 	)
 
 	_, err = ag.Work()
 	if err != nil {
-		lo.Error("ag failed: %s", err)
+		lo.Error("developer agent failed: %s", err)
 		os.Exit(1)
 	}
 
@@ -212,6 +196,7 @@ func RunSecurityAgent(
 	parameter agent.Parameter,
 	lo logger.Logger,
 	dataStore *store.Store,
+	llmForwarder agent.LLMForwarder,
 ) agent.Agent {
 	var changedFilePath []string
 	for _, f := range changedFiles {
@@ -229,8 +214,7 @@ func RunSecurityAgent(
 		lo,
 		submitServiceCaller,
 		securityPrompt,
-		//models.NewOpenAILLMForwarder(lo),
-		models.NewAnthropicLLMForwarder(lo),
+		llmForwarder,
 		dataStore,
 	)
 
