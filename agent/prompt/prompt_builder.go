@@ -56,6 +56,7 @@ func BuildSecurityPrompt(promptTpl PromptTemplate, changedFilesPath []string) (P
 
 	m["filePaths"] = changedFilesPath
 
+	m["noFiles"] = ""
 	if len(changedFilesPath) == 0 {
 		m["noFiles"] = "no changed files"
 	}

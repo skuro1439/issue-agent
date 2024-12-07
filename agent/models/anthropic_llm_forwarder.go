@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+
 	"github/clover0/github-issue-agent/agent"
 	"github/clover0/github-issue-agent/logger"
 	"github/clover0/github-issue-agent/step"
-	"os"
 )
 
 type AnthropicLLMForwarder struct {
@@ -30,7 +31,7 @@ func (a AnthropicLLMForwarder) StartForward(input agent.StartCompletionInput) ([
 	params, initialHistory := a.createParams(input)
 	history = append(history, initialHistory...)
 
-	a.anthropic.logger.Debug(logger.Green(fmt.Sprintf("model: %s, sending messages:\n", input.Model)))
+	a.anthropic.logger.Info(logger.Green(fmt.Sprintf("model: %s, sending message...\n", input.Model)))
 	a.anthropic.logger.Debug("%s\n", input.StartUserPrompt)
 	resp, err := a.anthropic.Messages.Create(context.TODO(), params)
 	if err != nil {
@@ -167,13 +168,6 @@ func (a AnthropicLLMForwarder) ForwardLLM(
 		"content": content,
 	})
 
-	// debug
-	b, err := json.Marshal(params)
-	if err != nil {
-		return nil, err
-	}
-	a.anthropic.logger.Debug("%s\n", string(b))
-
 	resp, err := a.anthropic.Messages.Create(context.TODO(), params)
 	if err != nil {
 		return nil, err
@@ -183,7 +177,7 @@ func (a AnthropicLLMForwarder) ForwardLLM(
 	var toolCalls []agent.ToolCall
 	var text string
 	for _, cont := range resp.Content {
-		// discard text. not make LLMMessage
+		// assumption of only 1 text per content
 		if cont.Type == "text" {
 			text = cont.Text
 			continue
@@ -207,14 +201,14 @@ func (a AnthropicLLMForwarder) ForwardLLM(
 		ReturnedToolCalls: toolCalls,
 	})
 
-	a.anthropic.logger.Debug(logger.Green("returned messages:\n"))
+	a.anthropic.logger.Info(logger.Yellow("returned messages:\n"))
 	a.showDebugMessage(history[len(history)-1])
 
 	return history, nil
 }
 
 // TODO: refactor with openai forwarder
-func (a AnthropicLLMForwarder) ForwardStep(ctx context.Context, history []agent.LLMMessage) step.Step {
+func (a AnthropicLLMForwarder) ForwardStep(_ context.Context, history []agent.LLMMessage) step.Step {
 	lastMsg := history[len(history)-1]
 
 	switch lastMsg.FinishReason {
@@ -278,7 +272,6 @@ func convertAnthoropicStopReasonToReason(reason string) agent.MessageFinishReaso
 	case "max_tokens":
 		return agent.FinishLengthOver
 	case "stop_sequence":
-		// TODO:git a
 		return agent.FinishStop
 	case "too_use":
 		return agent.FinishToolCalls
@@ -287,6 +280,7 @@ func convertAnthoropicStopReasonToReason(reason string) agent.MessageFinishReaso
 	}
 }
 
+// TODO: refactor with openai debugging
 func (a AnthropicLLMForwarder) showDebugMessage(m agent.LLMMessage) {
 	a.anthropic.logger.Debug(fmt.Sprintf("finish_reason: %s, role: %s, message.content: %s\n",
 		m.FinishReason, m.Role, m.RawContent,

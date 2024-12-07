@@ -55,8 +55,8 @@ func main() {
 	}
 
 	ctx := context.Background()
-	gh := newGitHub()
 
+	gh := newGitHub()
 	issLoader := loader.NewGitHubLoader(gh, cliIn.RepositoryOwner, cliIn.Repository)
 	submitServiceCaller := agithub.NewSubmitFileGitHubService(cliIn.RepositoryOwner, cliIn.Repository, gh, lo).
 		Caller(ctx, functions.SubmitFilesServiceInput{

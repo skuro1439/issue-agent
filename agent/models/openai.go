@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
-	"github/clover0/github-issue-agent/agent"
 
+	"github/clover0/github-issue-agent/agent"
 	"github/clover0/github-issue-agent/logger"
 	"github/clover0/github-issue-agent/step"
 )
@@ -82,7 +83,7 @@ func (o OpenAI) StartCompletion(ctx context.Context, input agent.StartCompletion
 		chat.Usage.PromptTokens, chat.Usage.CompletionTokens,
 	))
 
-	o.logger.Debug(logger.Green("returned messages:\n"))
+	o.logger.Info(logger.Yellow("returned messages:\n"))
 	o.debugShowChoice(history)
 
 	return history, nil
@@ -163,7 +164,7 @@ func (o OpenAI) ContinueCompletion(
 	}
 	history = append(history, lastMsg)
 
-	o.logger.Debug(logger.Green("returned messages:\n"))
+	o.logger.Info(logger.Yellow("returned messages:\n"))
 	o.debugShowChoice(history)
 
 	return history, nil
@@ -220,7 +221,7 @@ func (o OpenAI) CompletionNextStep(_ context.Context, history []agent.LLMMessage
 
 func (o OpenAI) debugShowSendingMsg(param openai.ChatCompletionNewParams) {
 	if len(param.Messages.Value) > 0 {
-		o.logger.Debug(logger.Green(fmt.Sprintf("model: %s, sending messages:\n", param.Model.String())))
+		o.logger.Info(logger.Green(fmt.Sprintf("model: %s, sending messages:\n", param.Model.String())))
 		o.logger.Debug(fmt.Sprintf("%s\n", param.Messages.Value[len(param.Messages.Value)-1]))
 	}
 }
