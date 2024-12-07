@@ -31,7 +31,7 @@ func main() {
 
 	llmForwarder := models.NewAnthropicLLMForwarder(lo)
 
-	cliIn, err := cli.ParseInput()
+	cliIn, err := cli.ParseIssueInput()
 	if err != nil {
 		lo.Error("failed to parse input: %s", err)
 		os.Exit(1)
@@ -88,7 +88,7 @@ func RunRequirementAgent(
 	issLoader loader.Loader,
 	submitServiceCaller functions.SubmitFilesCallerType,
 	parameter agent.Parameter,
-	cliIn cli.Inputs,
+	cliIn cli.IssueInputs,
 	lo logger.Logger,
 	dataStore *store.Store,
 	llmForwarder agent.LLMForwarder,
@@ -123,7 +123,7 @@ func RunDeveloperAgent(
 	issLoader loader.Loader,
 	submitServiceCaller functions.SubmitFilesCallerType,
 	parameter agent.Parameter,
-	cliIn cli.Inputs,
+	cliIn cli.IssueInputs,
 	lo logger.Logger,
 	dataStore *store.Store,
 	llmForwarder agent.LLMForwarder,
@@ -158,7 +158,7 @@ func RunDeveloper2Agent(
 	issLoader loader.Loader,
 	submitServiceCaller functions.SubmitFilesCallerType,
 	parameter agent.Parameter,
-	cliIn cli.Inputs,
+	cliIn cli.IssueInputs,
 	lo logger.Logger,
 	dataStore *store.Store,
 	instruction string,
