@@ -9,7 +9,7 @@ import (
 	"github/clover0/github-issue-agent/logger"
 )
 
-func CloneRepository(lo logger.Logger, cliIn cli.Inputs) error {
+func CloneRepository(lo logger.Logger, cliIn cli.IssueInputs) error {
 	token, ok := os.LookupEnv("GITHUB_TOKEN")
 	if !ok {
 		lo.Error("GITHUB_TOKEN is not set")
