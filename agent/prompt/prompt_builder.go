@@ -14,15 +14,10 @@ type Prompt struct {
 	StartUserPrompt string
 }
 
-func BuildRequirementPrompt(promptTpl PromptTemplate, issueLoader loader.Loader, issueNumber string) (Prompt, error) {
-	iss, err := issueLoader.LoadIssue(context.TODO(), issueNumber)
-	if err != nil {
-		return Prompt{}, fmt.Errorf("failed to load issue: %w", err)
-	}
-
+func BuildRequirementPrompt(promptTpl PromptTemplate, issue loader.Issue) (Prompt, error) {
 	return BuildPrompt(promptTpl, "requirement", map[string]any{
-		"issue":       iss.Content,
-		"issueNumber": issueNumber,
+		"issue":       issue.Content,
+		"issueNumber": issue.Path,
 	})
 }
 

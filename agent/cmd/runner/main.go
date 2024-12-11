@@ -15,6 +15,7 @@ import (
 	"github/clover0/github-issue-agent/models"
 	libprompt "github/clover0/github-issue-agent/prompt"
 	"github/clover0/github-issue-agent/store"
+	"github/clover0/github-issue-agent/util"
 )
 
 func newGitHub() *github.Client {
@@ -29,6 +30,7 @@ func main() {
 	//lo := logger.NewDefaultLogger()
 	lo := logger.NewPrinter()
 
+	// TODO: switch according to LLM model
 	llmForwarder := models.NewAnthropicLLMForwarder(lo)
 
 	cliIn, err := cli.ParseIssueInput()
@@ -57,7 +59,25 @@ func main() {
 	ctx := context.Background()
 
 	gh := newGitHub()
-	issLoader := loader.NewGitHubLoader(gh, cliIn.RepositoryOwner, cliIn.Repository)
+
+	var issLoader loader.Loader
+	var issue loader.Issue
+	if len(cliIn.FromFile) > 0 {
+		lo.Info("load issue from file")
+		issLoader = loader.NewFileLoader()
+		if issue, err = issLoader.LoadIssue(ctx, cliIn.FromFile); err != nil {
+			lo.Error("failed to load issue from file: %s", err)
+			os.Exit(1)
+		}
+	} else {
+		lo.Info("load issue from GitHub")
+		issLoader = loader.NewGitHubLoader(gh, cliIn.RepositoryOwner, cliIn.Repository)
+		if issue, err = issLoader.LoadIssue(ctx, cliIn.GithubIssueNumber); err != nil {
+			lo.Error("failed to load issue from GitHub: %s", err)
+			os.Exit(1)
+		}
+	}
+
 	submitServiceCaller := agithub.NewSubmitFileGitHubService(cliIn.RepositoryOwner, cliIn.Repository, gh, lo).
 		Caller(ctx, functions.SubmitFilesServiceInput{
 			BaseBranch: cliIn.BaseBranch,
@@ -71,34 +91,41 @@ func main() {
 		MaxSteps: cliIn.MaxSteps,
 		Model:    cliIn.Model,
 	}
-	requirementAgent := RunRequirementAgent(promptTemplate, issLoader, submitServiceCaller, parameter, cliIn, lo, &dataStore, llmForwarder)
+
+	prompt, err := libprompt.BuildRequirementPrompt(promptTemplate, issue)
+	if err != nil {
+		lo.Error("failed build requirement prompt: %s", err)
+		os.Exit(1)
+	}
+	requirementAgent := RunRequirementAgent(prompt, submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
 
 	//developerAgent := RunDeveloperAgent(promptTemplate, issLoader, cliIn, lo, gh, &dataStore, llmForwarder)
-	developer2Agent := RunDeveloper2Agent(promptTemplate, issLoader, submitServiceCaller, parameter, cliIn, lo, &dataStore,
-		requirementAgent.History()[len(requirementAgent.History())-1].RawContent, llmForwarder,
-	)
+	instruction := requirementAgent.History()[len(requirementAgent.History())-1].RawContent
+	prompt, err = libprompt.BuildDeveloper2Prompt(promptTemplate, issLoader, issue.Path, instruction)
+	if err != nil {
+		lo.Error("failed build developer prompt: %s", err)
+		os.Exit(1)
+	}
+	developer2Agent := RunDeveloper2Agent(prompt, submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
 
-	RunSecurityAgent(promptTemplate, developer2Agent.ChangedFiles(), submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
+	prompt, err = libprompt.BuildSecurityPrompt(promptTemplate, util.Map(developer2Agent.ChangedFiles(), func(f store.File) string { return f.Path }))
+	if err != nil {
+		lo.Error("failed to build security prompt: %s", err)
+		os.Exit(1)
+	}
+	RunSecurityAgent(prompt, developer2Agent.ChangedFiles(), submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
 
 	lo.Info("Agents finished successfully!")
 }
 
 func RunRequirementAgent(
-	promptTemplate libprompt.PromptTemplate,
-	issLoader loader.Loader,
+	prompt libprompt.Prompt,
 	submitServiceCaller functions.SubmitFilesCallerType,
 	parameter agent.Parameter,
-	cliIn cli.IssueInputs,
 	lo logger.Logger,
 	dataStore *store.Store,
 	llmForwarder agent.LLMForwarder,
 ) agent.Agent {
-	prompt, err := libprompt.BuildRequirementPrompt(promptTemplate, issLoader, cliIn.GithubIssueNumber)
-	if err != nil {
-		lo.Error("failed buld prompt: %s", err)
-		os.Exit(1)
-	}
-
 	ag := agent.NewAgent(
 		parameter,
 		"main",
@@ -109,43 +136,7 @@ func RunRequirementAgent(
 		dataStore,
 	)
 
-	_, err = ag.Work()
-	if err != nil {
-		lo.Error("ag failed: %s", err)
-		os.Exit(1)
-	}
-
-	return ag
-}
-
-func RunDeveloperAgent(
-	promptTemplate libprompt.PromptTemplate,
-	issLoader loader.Loader,
-	submitServiceCaller functions.SubmitFilesCallerType,
-	parameter agent.Parameter,
-	cliIn cli.IssueInputs,
-	lo logger.Logger,
-	dataStore *store.Store,
-	llmForwarder agent.LLMForwarder,
-) agent.Agent {
-	prompt, err := libprompt.BuildDeveloperPrompt(promptTemplate, issLoader, cliIn.GithubIssueNumber)
-	if err != nil {
-		lo.Error("failed build prompt: %s", err)
-		os.Exit(1)
-	}
-
-	ag := agent.NewAgent(
-		parameter,
-		"main",
-		lo,
-		submitServiceCaller,
-		prompt,
-		llmForwarder,
-		dataStore,
-	)
-
-	_, err = ag.Work()
-	if err != nil {
+	if _, err := ag.Work(); err != nil {
 		lo.Error("ag failed: %s", err)
 		os.Exit(1)
 	}
@@ -154,22 +145,13 @@ func RunDeveloperAgent(
 }
 
 func RunDeveloper2Agent(
-	promptTemplate libprompt.PromptTemplate,
-	issLoader loader.Loader,
+	prompt libprompt.Prompt,
 	submitServiceCaller functions.SubmitFilesCallerType,
 	parameter agent.Parameter,
-	cliIn cli.IssueInputs,
 	lo logger.Logger,
 	dataStore *store.Store,
-	instruction string,
 	llmForwarder agent.LLMForwarder,
 ) agent.Agent {
-	prompt, err := libprompt.BuildDeveloper2Prompt(promptTemplate, issLoader, cliIn.GithubIssueNumber, instruction)
-	if err != nil {
-		lo.Error("failed build prompt: %s", err)
-		os.Exit(1)
-	}
-
 	ag := agent.NewAgent(
 		parameter,
 		"main",
@@ -180,9 +162,8 @@ func RunDeveloper2Agent(
 		dataStore,
 	)
 
-	_, err = ag.Work()
-	if err != nil {
-		lo.Error("developer agent failed: %s", err)
+	if _, err := ag.Work(); err != nil {
+		lo.Error("ag failed: %s", err)
 		os.Exit(1)
 	}
 
@@ -190,7 +171,7 @@ func RunDeveloper2Agent(
 }
 
 func RunSecurityAgent(
-	promptTemplate libprompt.PromptTemplate,
+	prompt libprompt.Prompt,
 	changedFiles []store.File,
 	submitServiceCaller functions.SubmitFilesCallerType,
 	parameter agent.Parameter,
@@ -202,18 +183,12 @@ func RunSecurityAgent(
 	for _, f := range changedFiles {
 		changedFilePath = append(changedFilePath, f.Path)
 	}
-
-	securityPrompt, err := libprompt.BuildSecurityPrompt(promptTemplate, changedFilePath)
-	if err != nil {
-		lo.Error("failed to build security prompt: %s", err)
-		os.Exit(1)
-	}
 	ag := agent.NewAgent(
 		parameter,
 		"securityAgent",
 		lo,
 		submitServiceCaller,
-		securityPrompt,
+		prompt,
 		llmForwarder,
 		dataStore,
 	)
