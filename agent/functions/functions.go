@@ -11,12 +11,14 @@ import (
 	"github/clover0/github-issue-agent/store"
 )
 
-func init() {
+func InitializeFunctions(noSubmit bool) {
 	InitOpenFileFunction()
 	InitListFilesFunction()
 	InitPutFileFunction()
 	InitModifyFileFunction()
-	InitSubmitFilesGitHubFunction()
+	if !noSubmit {
+		InitSubmitFilesGitHubFunction()
+	}
 }
 
 type FuncName string
@@ -52,6 +54,8 @@ func FunctionByName(name string) (Function, error) {
 	return Function{}, errors.New(fmt.Sprintf("%s does not exist in functions", name))
 }
 
+// AllFunctions returns all functions
+// WARNING: Called initialization functions before calling this function
 func AllFunctions() []Function {
 	var fns []Function
 	for _, f := range functionsMap {

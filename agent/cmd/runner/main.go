@@ -30,7 +30,7 @@ func main() {
 	//lo := logger.NewDefaultLogger()
 	lo := logger.NewPrinter()
 
-	// TODO: switch according to LLM model
+	// TODO: switch according to LLM model, or in Agent
 	llmForwarder := models.NewAnthropicLLMForwarder(lo)
 
 	cliIn, err := cli.ParseIssueInput()
@@ -38,6 +38,8 @@ func main() {
 		lo.Error("failed to parse input: %s", err)
 		os.Exit(1)
 	}
+
+	functions.InitializeFunctions(cliIn.NoSubmit)
 
 	if err := agithub.CloneRepository(lo, cliIn); err != nil {
 		lo.Error("failed to clone repository")
@@ -128,7 +130,7 @@ func RunRequirementAgent(
 ) agent.Agent {
 	ag := agent.NewAgent(
 		parameter,
-		"main",
+		"requirement",
 		lo,
 		submitServiceCaller,
 		prompt,
@@ -137,7 +139,7 @@ func RunRequirementAgent(
 	)
 
 	if _, err := ag.Work(); err != nil {
-		lo.Error("ag failed: %s", err)
+		lo.Error("requirement agent failed: %s", err)
 		os.Exit(1)
 	}
 
