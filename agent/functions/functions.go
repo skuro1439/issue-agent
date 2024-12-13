@@ -19,6 +19,8 @@ func InitializeFunctions(noSubmit bool) {
 	if !noSubmit {
 		InitSubmitFilesGitHubFunction()
 	}
+	InitFuncGetLatestVersionSearchResultFunction()
+	InitFuncGetWebPageFromURLFunction()
 }
 
 type FuncName string
@@ -145,8 +147,33 @@ func ExecFunction(store *store.Store, funcName FuncName, argsJson string, optArg
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)
 		}
-
 		return defaultSuccessReturning, SubmitFiles(option.SubmitFilesFunction, input)
+
+	case FuncGetLatestVersionSearchResult:
+		fmt.Println("functions: do get_latest_version_search_result")
+		input := GetLatestVersionSearchResultInput{}
+		if err := marshalFuncArgs(argsJson, &input); err != nil {
+			return "", fmt.Errorf("failed to unmarshal args: %w", err)
+		}
+
+		r, err := GetLatestVersionSearchResult(input)
+		if err != nil {
+			return "", err
+		}
+		return r, nil
+
+	case FuncGetWebPageFromURL:
+		fmt.Println("functions: do get_web_page_from_url")
+		input := GetWebPageFromURLInput{}
+		if err := marshalFuncArgs(argsJson, &input); err != nil {
+			return "", fmt.Errorf("failed to unmarshal args: %w", err)
+		}
+
+		r, err := GetWebPageFromURL(input)
+		if err != nil {
+			return "", err
+		}
+		return r, nil
 	}
 
 	return "", errors.New("function not found")
