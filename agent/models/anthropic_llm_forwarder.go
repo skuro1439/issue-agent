@@ -168,6 +168,9 @@ func (a AnthropicLLMForwarder) ForwardLLM(
 		"content": content,
 	})
 
+	a.anthropic.logger.Info(logger.Green(fmt.Sprintf("model: %s, sending message...\n", input.Model)))
+	a.anthropic.logger.Debug("%s\n", newMsg.RawContent)
+
 	resp, err := a.anthropic.Messages.Create(context.TODO(), params)
 	if err != nil {
 		return nil, err
