@@ -11,47 +11,47 @@ import (
 	"golang.org/x/net/html"
 )
 
-const FuncGetLatestVersionSearchResult = "get_latest_version_search_result"
+const FuncGetWebSearchResult = "get_web_search_result"
 
 const ddgBaseURL = "https://html.duckduckgo.com/html"
 
-func InitFuncGetLatestVersionSearchResultFunction() Function {
+func InitGetWebSearchResult() Function {
 	f := Function{
-		Name: FuncGetLatestVersionSearchResult,
-		Description: `List of summaries of the latest versions of libraries, packages, and other software from the Internet.
-The format is 'title:' and 'url:' and 'snippet'. You should get page by the url next`,
-		Func:     GetLatestVersionSearchResult,
-		FuncType: reflect.TypeOf(GetLatestVersionSearchResult),
+		Name: FuncGetWebSearchResult,
+		Description: `Get a list of results from an Internet search conducted with keywords.
+You should get the page information from the url of the result next.`,
+		Func:     GetWebSearchResult,
+		FuncType: reflect.TypeOf(GetWebSearchResult),
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"software_name": map[string]interface{}{
+				"keyword": map[string]interface{}{
 					"type":        "string",
-					"description": "Name of software for which you want to get the latest version summary list",
+					"description": "Keyword to search for on the Internet",
 				},
 			},
-			"required":             []string{"software_name"},
+			"required":             []string{"keyword"},
 			"additionalProperties": false,
 		},
 	}
 
-	functionsMap[FuncGetLatestVersionSearchResult] = f
+	functionsMap[FuncGetWebSearchResult] = f
 
 	return f
 }
 
-type GetLatestVersionSearchResultInput struct {
-	SoftwareName string
+type GetWebSearchResultInput struct {
+	Keyword string
 }
 
-func GetLatestVersionSearchResult(input GetLatestVersionSearchResultInput) (_ string, err error) {
+func GetWebSearchResult(input GetWebSearchResultInput) (_ string, err error) {
 	u, err := url.Parse(ddgBaseURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse URL: %w", err)
 	}
 
 	param := url.Values{}
-	param.Set("q", fmt.Sprintf("latest version of %s", input.SoftwareName))
+	param.Set("q", fmt.Sprintf("%s", input.Keyword))
 	payload := bytes.NewBufferString(param.Encode())
 	req, err := http.NewRequest(http.MethodPost, u.String(), payload)
 	if err != nil {

@@ -19,7 +19,7 @@ func InitializeFunctions(noSubmit bool) {
 	if !noSubmit {
 		InitSubmitFilesGitHubFunction()
 	}
-	InitFuncGetLatestVersionSearchResultFunction()
+	InitGetWebSearchResult()
 	InitFuncGetWebPageFromURLFunction()
 }
 
@@ -149,14 +149,14 @@ func ExecFunction(store *store.Store, funcName FuncName, argsJson string, optArg
 		}
 		return defaultSuccessReturning, SubmitFiles(option.SubmitFilesFunction, input)
 
-	case FuncGetLatestVersionSearchResult:
+	case FuncGetWebSearchResult:
 		fmt.Println("functions: do get_latest_version_search_result")
-		input := GetLatestVersionSearchResultInput{}
+		input := GetWebSearchResultInput{}
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)
 		}
 
-		r, err := GetLatestVersionSearchResult(input)
+		r, err := GetWebSearchResult(input)
 		if err != nil {
 			return "", err
 		}
