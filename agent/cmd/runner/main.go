@@ -39,8 +39,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	functions.InitializeFunctions(cliIn.NoSubmit)
-
 	if err := agithub.CloneRepository(lo, cliIn); err != nil {
 		lo.Error("failed to clone repository")
 		os.Exit(1)
@@ -61,6 +59,11 @@ func main() {
 	ctx := context.Background()
 
 	gh := newGitHub()
+
+	functions.InitializeFunctions(
+		cliIn.NoSubmit,
+		agithub.NewGitHubService(cliIn.RepositoryOwner, cliIn.Repository, gh, lo),
+	)
 
 	var issLoader loader.Loader
 	var issue loader.Issue
@@ -115,7 +118,7 @@ func main() {
 		lo.Error("failed to build security prompt: %s", err)
 		os.Exit(1)
 	}
-	RunSecurityAgent(prompt, developer2Agent.ChangedFiles(), submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
+	//RunSecurityAgent(prompt, developer2Agent.ChangedFiles(), submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
 
 	lo.Info("Agents finished successfully!")
 }

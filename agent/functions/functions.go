@@ -11,7 +11,10 @@ import (
 	"github/clover0/github-issue-agent/store"
 )
 
-func InitializeFunctions(noSubmit bool) {
+func InitializeFunctions(
+	noSubmit bool,
+	repoService RepositoryService,
+) {
 	InitOpenFileFunction()
 	InitListFilesFunction()
 	InitPutFileFunction()
@@ -21,6 +24,7 @@ func InitializeFunctions(noSubmit bool) {
 	}
 	InitGetWebSearchResult()
 	InitFuncGetWebPageFromURLFunction()
+	InitGetPullRequestFunction(repoService)
 }
 
 type FuncName string
@@ -174,6 +178,19 @@ func ExecFunction(store *store.Store, funcName FuncName, argsJson string, optArg
 			return "", err
 		}
 		return r, nil
+
+	case FuncGetPullRequestDiff:
+		fmt.Println("functions: do get_pull_request_diff")
+		input := GetPullRequestDiffInput{}
+		if err := marshalFuncArgs(argsJson, &input); err != nil {
+			return "", fmt.Errorf("failed to unmarshal args: %w", err)
+		}
+		fn, ok := functionsMap[FuncGetPullRequestDiff].Func.(GetPullRequestDiffType)
+		if !ok {
+			return "", fmt.Errorf("cat not call %s function", FuncGetPullRequestDiff)
+		}
+		return fn(input)
+
 	}
 
 	return "", errors.New("function not found")
