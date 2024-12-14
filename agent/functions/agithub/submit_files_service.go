@@ -11,6 +11,7 @@ import (
 	"github/clover0/github-issue-agent/logger"
 )
 
+// TODO: move to GitHub service
 type SubmitFileGitHubService struct {
 	owner      string
 	repository string
@@ -32,6 +33,7 @@ func NewSubmitFileGitHubService(
 	}
 }
 
+// TODO: move to GitHub service
 func (s SubmitFileGitHubService) Caller(
 	ctx context.Context,
 	callerInput functions.SubmitFilesServiceInput,
@@ -91,7 +93,8 @@ func (s SubmitFileGitHubService) Caller(
 			return fmt.Errorf("submit file service: git push branch error: %w", err)
 		}
 
-		s.logger.Debug(fmt.Sprintf("submit file service: create PR parameter: %s", callerInput))
+		s.logger.Debug(fmt.Sprintf("submit file service: create PR parameter name:%s, email:%s, base branch:%s\n",
+			callerInput.GitName, callerInput.GitEmail, callerInput.BaseBranch))
 		pr, _, err := s.client.PullRequests.Create(ctx, s.owner, s.repository, &github.NewPullRequest{
 			Title: &input.CommitMessageShort,
 			Head:  &newBranch,
@@ -101,11 +104,8 @@ func (s SubmitFileGitHubService) Caller(
 		if err != nil {
 			return fmt.Errorf("submit file service: create PR: %w", err)
 		}
-		s.logger.Debug(fmt.Sprintf("created PR: %s", pr.URL))
+		s.logger.Debug(fmt.Sprintf("created PR: %s\n", pr.URL))
 
 		return nil
 	}
-}
-
-func (s SubmitFileGitHubService) Commit() {
 }
