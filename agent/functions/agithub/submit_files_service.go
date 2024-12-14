@@ -79,7 +79,7 @@ func (s SubmitFileGitHubService) Caller(
 		}
 		s.logger.Debug(fmt.Sprintf("git add all: %s\n", out))
 
-		out, err = agit.GitCommit(s.logger, input.CommitMessage)
+		out, err = agit.GitCommit(s.logger, input.CommitMessageDetail)
 		if err != nil {
 			return fmt.Errorf("submit file service: git commit error: %w", err)
 		}
@@ -93,7 +93,7 @@ func (s SubmitFileGitHubService) Caller(
 
 		s.logger.Debug(fmt.Sprintf("submit file service: create PR parameter: %s", callerInput))
 		pr, _, err := s.client.PullRequests.Create(ctx, s.owner, s.repository, &github.NewPullRequest{
-			Title: &input.CommitMessage,
+			Title: &input.CommitMessageShort,
 			Head:  &newBranch,
 			Base:  &callerInput.BaseBranch,
 			Body:  &input.PullRequestContent,
