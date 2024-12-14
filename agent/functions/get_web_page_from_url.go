@@ -65,9 +65,7 @@ func GetWebPageFromURL(input GetWebPageFromURLInput) (string, error) {
 
 	t := extractText(doc)
 
-	fmt.Println(t)
-
-	return "", nil
+	return t, nil
 }
 
 const maxTextLength = 80000
