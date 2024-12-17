@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"os"
+	"strings"
 
 	"github.com/google/go-github/v66/github"
 
@@ -104,20 +107,57 @@ func main() {
 	}
 	requirementAgent := RunRequirementAgent(prompt, submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
 
-	//developerAgent := RunDeveloperAgent(promptTemplate, issLoader, cliIn, lo, gh, &dataStore, llmForwarder)
 	instruction := requirementAgent.History()[len(requirementAgent.History())-1].RawContent
-	prompt, err = libprompt.BuildDeveloper2Prompt(promptTemplate, issLoader, issue.Path, instruction)
+	prompt, err = libprompt.BuildDeveloperPrompt(promptTemplate, issLoader, issue.Path, instruction)
 	if err != nil {
 		lo.Error("failed build developer prompt: %s", err)
 		os.Exit(1)
 	}
-	developer2Agent := RunDeveloper2Agent(prompt, submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
+	developer2Agent := RunDeveloperAgent(prompt, submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
 
-	prompt, err = libprompt.BuildSecurityPrompt(promptTemplate, util.Map(developer2Agent.ChangedFiles(), func(f store.File) string { return f.Path }))
+	prompt, err = libprompt.BuildReviewManagerPrompt(promptTemplate, issue, util.Map(developer2Agent.ChangedFiles(), func(f store.File) string { return f.Path }))
 	if err != nil {
-		lo.Error("failed to build security prompt: %s", err)
+		lo.Error("failed to build review manager prompt: %s", err)
 		os.Exit(1)
 	}
+	reviewManager := ReviewManagerAgent(
+		prompt,
+		parameter,
+		developer2Agent.ChangedFiles(),
+		cliIn.GithubIssueNumber,
+		submitServiceCaller,
+		lo, &dataStore, llmForwarder)
+	output := reviewManager.History()[len(reviewManager.History())-1].RawContent
+	lo.Info("ReviewManagerAgent output: %s", output)
+	type agentPrompt struct {
+		AgentName string `json:"agent_name"`
+		Prompt    string `json:"prompt"`
+	}
+
+	// TODO:
+	var prompts []agentPrompt
+	jsonStart := strings.Index(output, "[")   // find JSON start
+	jsonEnd := strings.LastIndex(output, "]") // find JSON end
+	outBuff := bytes.NewBufferString(output[jsonStart : jsonEnd+1])
+	if err := json.Unmarshal(outBuff.Bytes(), &prompts); err != nil {
+		lo.Error("failed to unmarshal output: %s", err)
+		os.Exit(1)
+	}
+
+	for _, p := range prompts {
+		lo.Info("Run %s\n", p.AgentName)
+		RunReviewAgent(
+			p.AgentName,
+			libprompt.Prompt{StartUserPrompt: p.Prompt},
+			parameter, cliIn.GithubIssueNumber, submitServiceCaller, lo, &dataStore, llmForwarder)
+		lo.Info("Finish %s\n", p.AgentName)
+	}
+
+	//prompt, err = libprompt.BuildSecurityPrompt(promptTemplate, util.Map(developer2Agent.ChangedFiles(), func(f store.File) string { return f.Path }))
+	//if err != nil {
+	//	lo.Error("failed to build security prompt: %s", err)
+	//	os.Exit(1)
+	//}
 	//RunSecurityAgent(prompt, developer2Agent.ChangedFiles(), submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
 
 	lo.Info("Agents finished successfully!")
@@ -133,7 +173,7 @@ func RunRequirementAgent(
 ) agent.Agent {
 	ag := agent.NewAgent(
 		parameter,
-		"requirement",
+		"requirementAgent",
 		lo,
 		submitServiceCaller,
 		prompt,
@@ -149,7 +189,7 @@ func RunRequirementAgent(
 	return ag
 }
 
-func RunDeveloper2Agent(
+func RunDeveloperAgent(
 	prompt libprompt.Prompt,
 	submitServiceCaller functions.SubmitFilesCallerType,
 	parameter agent.Parameter,
@@ -159,7 +199,7 @@ func RunDeveloper2Agent(
 ) agent.Agent {
 	ag := agent.NewAgent(
 		parameter,
-		"main",
+		"developerAgent",
 		lo,
 		submitServiceCaller,
 		prompt,
@@ -200,6 +240,66 @@ func RunSecurityAgent(
 
 	if _, err := ag.Work(); err != nil {
 		lo.Error("securityAgent failed: %s", err)
+		os.Exit(1)
+	}
+
+	return ag
+}
+
+func ReviewManagerAgent(
+	prompt libprompt.Prompt,
+	parameter agent.Parameter,
+	changedFiles []store.File,
+	prNumber string,
+	submitServiceCaller functions.SubmitFilesCallerType,
+	lo logger.Logger,
+	dataStore *store.Store,
+	llmForwarder agent.LLMForwarder,
+) agent.Agent {
+	var changedFilePath []string
+	for _, f := range changedFiles {
+		changedFilePath = append(changedFilePath, f.Path)
+	}
+	ag := agent.NewAgent(
+		parameter,
+		"reviewManagerAgent",
+		lo,
+		submitServiceCaller,
+		prompt,
+		llmForwarder,
+		dataStore,
+	)
+
+	if _, err := ag.Work(); err != nil {
+		lo.Error("securityAgent failed: %s", err)
+		os.Exit(1)
+	}
+
+	return ag
+}
+
+func RunReviewAgent(
+	name string,
+	prompt libprompt.Prompt,
+	parameter agent.Parameter,
+	prNumber string,
+	submitServiceCaller functions.SubmitFilesCallerType, // TODO
+	lo logger.Logger,
+	dataStore *store.Store,
+	llmForwarder agent.LLMForwarder,
+) agent.Agent {
+	ag := agent.NewAgent(
+		parameter,
+		name,
+		lo,
+		submitServiceCaller,
+		prompt,
+		llmForwarder,
+		dataStore,
+	)
+
+	if _, err := ag.Work(); err != nil {
+		lo.Error("%s failed: %s", name, err)
 		os.Exit(1)
 	}
 
