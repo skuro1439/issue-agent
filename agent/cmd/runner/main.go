@@ -136,7 +136,12 @@ func main() {
 		Prompt    string `json:"prompt"`
 	}
 
-	// TODO:
+	// TODO: refactor
+	// parse json output for revwier agents
+	// expected output:
+	//   text text text...
+	//   [{"agent_name": "agent1", "prompt": "prompt1"}, ...]
+	//   test...
 	var prompts []agentPrompt
 	jsonStart := strings.Index(output, "[")   // find JSON start
 	jsonEnd := strings.LastIndex(output, "]") // find JSON end
@@ -153,10 +158,58 @@ func main() {
 			lo.Error("failed to build reviewer prompt: %s", err)
 			os.Exit(1)
 		}
-		RunReviewAgent(
+
+		reviewer := RunReviewAgent(
 			p.AgentName,
 			prpt,
 			parameter, cliIn.GithubIssueNumber, submitServiceCaller, lo, &dataStore, llmForwarder)
+		output := reviewer.History()[len(reviewer.History())-1].RawContent
+
+		// parse JSON output
+		var reviews []struct {
+			ReviewFilePath  string `json:"review_file_path"`
+			ReviewStartLine int    `json:"review_start_line"`
+			ReviewEndLine   int    `json:"review_end_line"`
+			ReviewComment   string `json:"review_comment"`
+			Suggestion      string `json:"suggestion"`
+		}
+		jsonStart := strings.Index(output, "[")   // find JSON start
+		jsonEnd := strings.LastIndex(output, "]") // find JSON end
+		outBuff := bytes.NewBufferString(output[jsonStart : jsonEnd+1])
+		if err := json.Unmarshal(outBuff.Bytes(), &reviews); err != nil {
+			lo.Error("failed to unmarshal output: %s", err)
+			os.Exit(1)
+		}
+
+		// TODO: move to agithub package
+		var comments []*github.DraftReviewComment
+		for _, r := range reviews {
+			startLine := github.Int(r.ReviewStartLine)
+			if r.ReviewStartLine == r.ReviewEndLine {
+				startLine = nil
+			}
+			body := r.ReviewComment + "\n\n" + "```suggestion\n" + r.Suggestion + "\n```\n"
+			comments = append(comments, &github.DraftReviewComment{
+				Path:      github.String(r.ReviewFilePath),
+				Body:      github.String(body),
+				StartLine: startLine,
+				Line:      github.Int(r.ReviewEndLine),
+				Side:      github.String("RIGHT"),
+			})
+		}
+
+		if _, _, err := gh.PullRequests.CreateReview(context.Background(),
+			cliIn.RepositoryOwner,
+			cliIn.Repository,
+			submittedPRNumber,
+			&github.PullRequestReviewRequest{
+				Event:    github.String("COMMENT"),
+				Comments: comments,
+			},
+		); err != nil {
+			lo.Error("failed to create review: %s", err)
+			os.Exit(1)
+		}
 		lo.Info("Finish %s\n", p.AgentName)
 	}
 
