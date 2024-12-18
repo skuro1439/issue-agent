@@ -27,6 +27,7 @@ func (s *Store) AddSubmission(key string, sub Submission) {
 	s.submissions[key] = sub
 }
 
+// TODO: not returning nil
 func (s *Store) GetSubmission(key string) *Submission {
 	if v, ok := s.submissions[key]; !ok {
 		return nil

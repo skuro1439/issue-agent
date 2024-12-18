@@ -81,24 +81,23 @@ agents:
       * レビューの観点は、例えばセキュリティやガバナンスなどが挙げられますが、それ以外の観点も生成してくかまいません
       * 1エージェントで1観点のみとして、最大で3つのプロンプトを生成してください
       * promptは日本語で記述してください
-      * プロンプトは以下のテンプレートに沿って生成しなければなりません
-      * 最終的に以下のJSON Schemaに沿った出力だけをしてください
+      * プロンプトは以下のtemplateに沿って生成しなければなりません
+      * 最終的に以下のjson-schemaに沿った出力だけをしてください
       
       IMPORTANT:
       * JSON以外を出力してはいけません
       * JSONだけを出力してください
 
-      <テンプレート>
+      <template>
       役割:
-      ここにどんな役割で振る舞えばよいか書いてください(例: あなたは最新の情報に精通したセキュリティの専門家です)
+      どんな役割で振る舞えばよいかここに書いてください(例: あなたは最新の情報に精通したセキュリティの専門家です)
 
       指示:
-      どんなレビューをして変更をすればよいか書いてください
+      どんなレビューをして変更すればよいかここに書いてください
       
-      必要に応じて変更を行なってsubmit_files関数を利用して提出してください
-      </テンプレート>
+      </template>
 
-      出力 JSON Schema:
+      <json-schema>
       {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "type": "array",
@@ -123,6 +122,60 @@ agents:
           }
         ]
       }
+      </json-schema>
+
+  - name: reviewer
+    system_prompt: |-
+      あなたGitHubのPullRequestのレビュアーです。
+    user_prompt: |-
+      {{.reviewerPrompt}}
+      
+      レビュー対象のPull Request Number: {{.prNumber}}
+      
+      出力の指示:
+      以下のjson-schemaにしたがって出力してください。
+      
+      <json-schema>
+      {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "type": "array",
+        "items": [
+          {
+            "type": "object",
+            "description": "An object representing one review in a file",
+            "properties": {
+              "review_file_path": {
+                "description": "File path for review",
+                "type": "string",
+              },
+              "review_start_line": {
+                "description": "Review start line number on file",
+                "type": "number",
+              },
+              "review_end_line": {
+                "description": "Review end line number on file",
+                "type": "number",
+              },
+              "review_comment": {
+                "description": "Pull Request review comment",
+                "type": "string",
+              },
+              "suggestion": {
+                "description": "Show what code is good from start line to end line",
+                "type": "string"
+              }
+            },
+            "required": [
+              "review_file_path",
+              "review_start_line",
+              "review_end_line",
+              "review_comment",
+              "suggestion" 
+            ]
+          }
+        ]
+      }  
+      </json-schema>
 
   - name: security
     system_prompt: |-

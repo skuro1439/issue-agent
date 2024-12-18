@@ -11,7 +11,8 @@ type SubmitFilesServiceInput struct {
 type SubmitFilesCallerType func(input SubmitFilesInput) (SubmitFilesOutput, error)
 
 type SubmitFilesOutput struct {
-	Branch string
+	Branch            string
+	PullRequestNumber int
 }
 
 type SubmitFilesService interface {

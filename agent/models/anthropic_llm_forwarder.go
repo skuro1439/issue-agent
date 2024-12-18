@@ -65,6 +65,9 @@ func (a AnthropicLLMForwarder) StartForward(input agent.StartCompletionInput) ([
 		ReturnedToolCalls: toolCalls,
 	})
 
+	a.anthropic.logger.Info(logger.Yellow("returned messages:\n"))
+	a.showDebugMessage(history[len(history)-1])
+
 	return history, nil
 }
 

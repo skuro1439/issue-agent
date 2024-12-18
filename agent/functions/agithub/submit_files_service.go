@@ -106,6 +106,9 @@ func (s SubmitFileGitHubService) Caller(
 		}
 		s.logger.Debug(fmt.Sprintf("created PR: %s\n", pr.URL))
 
-		return functions.SubmitFilesOutput{Branch: newBranch}, nil
+		return functions.SubmitFilesOutput{
+			Branch:            newBranch,
+			PullRequestNumber: *pr.Number,
+		}, nil
 	}
 }

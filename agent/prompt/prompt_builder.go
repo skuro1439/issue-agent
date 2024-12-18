@@ -61,6 +61,15 @@ func BuildReviewManagerPrompt(promptTpl PromptTemplate, issue loader.Issue, chan
 	return BuildPrompt(promptTpl, "review-manager", m)
 }
 
+func BuildReviewerPrompt(promptTpl PromptTemplate, issue loader.Issue, prNumber int, reviewerPrompt string) (Prompt, error) {
+	m := make(map[string]any)
+
+	m["prNumber"] = prNumber
+	m["reviewerPrompt"] = reviewerPrompt
+
+	return BuildPrompt(promptTpl, "reviewer", m)
+}
+
 func BuildPrompt(promptTpl PromptTemplate, templateName string, templateMap map[string]any) (Prompt, error) {
 	var prpt Prompt
 	for _, p := range promptTpl.Agents {

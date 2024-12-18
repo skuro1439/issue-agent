@@ -115,6 +115,8 @@ func main() {
 	}
 	developer2Agent := RunDeveloperAgent(prompt, submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
 
+	submittedPRNumber := dataStore.GetSubmission(store.LastSubmissionKey).PullRequestNumber
+
 	prompt, err = libprompt.BuildReviewManagerPrompt(promptTemplate, issue, util.Map(developer2Agent.ChangedFiles(), func(f store.File) string { return f.Path }))
 	if err != nil {
 		lo.Error("failed to build review manager prompt: %s", err)
@@ -146,9 +148,14 @@ func main() {
 
 	for _, p := range prompts {
 		lo.Info("Run %s\n", p.AgentName)
+		prpt, err := libprompt.BuildReviewerPrompt(promptTemplate, issue, submittedPRNumber, p.Prompt)
+		if err != nil {
+			lo.Error("failed to build reviewer prompt: %s", err)
+			os.Exit(1)
+		}
 		RunReviewAgent(
 			p.AgentName,
-			libprompt.Prompt{StartUserPrompt: p.Prompt},
+			prpt,
 			parameter, cliIn.GithubIssueNumber, submitServiceCaller, lo, &dataStore, llmForwarder)
 		lo.Info("Finish %s\n", p.AgentName)
 	}
@@ -271,7 +278,7 @@ func ReviewManagerAgent(
 	)
 
 	if _, err := ag.Work(); err != nil {
-		lo.Error("securityAgent failed: %s", err)
+		lo.Error("reviewManagerAgent failed: %s", err)
 		os.Exit(1)
 	}
 

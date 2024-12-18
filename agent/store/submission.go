@@ -1,5 +1,6 @@
 package store
 
 type Submission struct {
-	BaseBranch string
+	BaseBranch        string
+	PullRequestNumber int
 }
