@@ -39,6 +39,6 @@ type SubmitFilesInput struct {
 	PullRequestContent  string `json:"pull_request_content"`
 }
 
-func SubmitFiles(submitting func(input SubmitFilesInput) error, input SubmitFilesInput) error {
+func SubmitFiles(submitting SubmitFilesCallerType, input SubmitFilesInput) (SubmitFilesOutput, error) {
 	return submitting(input)
 }
