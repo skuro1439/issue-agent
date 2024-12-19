@@ -34,5 +34,6 @@ func (g GitHubLoader) LoadIssue(ctx context.Context, number string) (Issue, erro
 
 	return Issue{
 		Content: *issue.Body,
+		Path:    number,
 	}, nil
 }
