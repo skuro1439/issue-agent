@@ -45,7 +45,7 @@ func ParseIssueInput() (IssueInputs, error) {
 	// TODO: make default setting
 	cmd.StringVar(&cliIn.AgentWorkDir, "workdir", ".", "Workdir for the agent to run")
 	cmd.BoolVar(&cliIn.NoSubmit, "no_submit", false, "Option to not submit the pull request. And not commit.")
-	cmd.StringVar(&cliIn.FromFile, "from_file", ".", "Issue content from file path")
+	cmd.StringVar(&cliIn.FromFile, "from_file", "", "Issue content from file path")
 
 	if err := cmd.Parse(os.Args[2:]); err != nil {
 		return IssueInputs{}, fmt.Errorf("failed to parse input: %w", err)
