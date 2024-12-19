@@ -8,15 +8,23 @@ import (
 	"strings"
 
 	"github.com/openai/openai-go"
-	"github/clover0/github-issue-agent/store"
+	libstore "github/clover0/github-issue-agent/store"
 )
 
-func init() {
+func InitializeFunctions(
+	noSubmit bool,
+	repoService RepositoryService,
+) {
 	InitOpenFileFunction()
 	InitListFilesFunction()
 	InitPutFileFunction()
 	InitModifyFileFunction()
-	InitSubmitFilesGitHubFunction()
+	if !noSubmit {
+		InitSubmitFilesGitHubFunction()
+	}
+	InitGetWebSearchResult()
+	InitFuncGetWebPageFromURLFunction()
+	InitGetPullRequestFunction(repoService)
 }
 
 type FuncName string
@@ -52,6 +60,8 @@ func FunctionByName(name string) (Function, error) {
 	return Function{}, errors.New(fmt.Sprintf("%s does not exist in functions", name))
 }
 
+// AllFunctions returns all functions
+// WARNING: Called initialization functions before calling this function
 func AllFunctions() []Function {
 	var fns []Function
 	for _, f := range functionsMap {
@@ -78,7 +88,7 @@ func SetSubmitFiles(fn SubmitFilesCallerType) FunctionOption {
 	}
 }
 
-func ExecFunction(store *store.Store, funcName FuncName, argsJson string, optArg ...FunctionOption) (string, error) {
+func ExecFunction(store *libstore.Store, funcName FuncName, argsJson string, optArg ...FunctionOption) (string, error) {
 	option := &optionalArg{}
 	for _, o := range optArg {
 		o(option)
@@ -141,8 +151,54 @@ func ExecFunction(store *store.Store, funcName FuncName, argsJson string, optArg
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)
 		}
+		out, err := SubmitFiles(option.SubmitFilesFunction, input)
+		if err != nil {
+			return "", err
+		}
 
-		return defaultSuccessReturning, SubmitFiles(option.SubmitFilesFunction, input)
+		// NOTE: we would like to use any key, but for ease of implementation, we keep this as a simple implementation.
+		SubmitFilesAfter(store, libstore.LastSubmissionKey, out)
+
+		return defaultSuccessReturning, nil
+
+	case FuncGetWebSearchResult:
+		fmt.Println("functions: do get_latest_version_search_result")
+		input := GetWebSearchResultInput{}
+		if err := marshalFuncArgs(argsJson, &input); err != nil {
+			return "", fmt.Errorf("failed to unmarshal args: %w", err)
+		}
+
+		r, err := GetWebSearchResult(input)
+		if err != nil {
+			return "", err
+		}
+		return r, nil
+
+	case FuncGetWebPageFromURL:
+		fmt.Println("functions: do get_web_page_from_url")
+		input := GetWebPageFromURLInput{}
+		if err := marshalFuncArgs(argsJson, &input); err != nil {
+			return "", fmt.Errorf("failed to unmarshal args: %w", err)
+		}
+
+		r, err := GetWebPageFromURL(input)
+		if err != nil {
+			return "", err
+		}
+		return r, nil
+
+	case FuncGetPullRequestDiff:
+		fmt.Println("functions: do get_pull_request_diff")
+		input := GetPullRequestDiffInput{}
+		if err := marshalFuncArgs(argsJson, &input); err != nil {
+			return "", fmt.Errorf("failed to unmarshal args: %w", err)
+		}
+		fn, ok := functionsMap[FuncGetPullRequestDiff].Func.(GetPullRequestDiffType)
+		if !ok {
+			return "", fmt.Errorf("cat not call %s function", FuncGetPullRequestDiff)
+		}
+		return fn(input)
+
 	}
 
 	return "", errors.New("function not found")

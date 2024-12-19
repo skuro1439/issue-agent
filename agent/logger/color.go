@@ -14,10 +14,26 @@ const (
 	white   Color = "\033[97m"
 )
 
+var noColor = false
+
+func SetNoColor() {
+	noColor = true
+}
+
 func (c Color) String() string {
 	return string(c)
 }
 
 func Green(str string) string {
+	if noColor {
+		return str
+	}
 	return green.String() + str + reset.String()
+}
+
+func Yellow(str string) string {
+	if noColor {
+		return str
+	}
+	return yellow.String() + str + reset.String()
 }

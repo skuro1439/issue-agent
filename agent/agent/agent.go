@@ -109,7 +109,6 @@ func (a *Agent) Work() (lastOutput string, err error) {
 			}
 			a.updateHistory(history)
 			a.currentStep = a.llmForwarder.ForwardStep(ctx, history)
-			a.logg.Debug("end step return to LLM\n")
 
 		case step.WaitingInstruction:
 			a.logg.Debug("finish instruction\n")

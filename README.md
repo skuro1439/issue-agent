@@ -26,13 +26,14 @@ Only GitHub pull requests are supported.
   - GitHub Repository `clover0/example-repository`
 1. Run Agent with parameters below run example
 ```shell
+cd agent
 docker compose run --rm \
   -e GITHUB_TOKEN=$(gh auth token) \
   -e OPENAI_API_KEY=${OPENAI_API_KEY} \
   -e ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY} \
   -e LOG_LEVEL=debug \
   agent \
-  go run cmd/runner/main.go \
+  go run cmd/runner/main.go issue \
     -github_issue_number 123 \
     -clone_repository \
     -repository_owner clover0 \

@@ -59,6 +59,11 @@ func PutFile(input PutFileInput) (store.File, error) {
 	}
 	defer f.Close()
 
+	// EOF should be a newline
+	if input.ContentText[len(input.ContentText)-1] != '\n' {
+		input.ContentText += "\n"
+	}
+
 	if _, err := f.WriteString(input.ContentText); err != nil {
 		return file, err
 	}

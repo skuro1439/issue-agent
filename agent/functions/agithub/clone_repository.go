@@ -9,11 +9,11 @@ import (
 	"github/clover0/github-issue-agent/logger"
 )
 
-func CloneRepository(lo logger.Logger, cliIn cli.Inputs) error {
+func CloneRepository(lo logger.Logger, cliIn cli.IssueInputs) error {
 	token, ok := os.LookupEnv("GITHUB_TOKEN")
 	if !ok {
 		lo.Error("GITHUB_TOKEN is not set")
-		return fmt.Errorf("GITHUB_TOKEN is not set")
+		return fmt.Errorf("GITHUB_TOKEN is not set\n")
 	}
 	lo.Info("cloning repository...\n")
 	cmd := exec.Command("git", "clone", "--depth", "1",
@@ -23,9 +23,9 @@ func CloneRepository(lo logger.Logger, cliIn cli.Inputs) error {
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		lo.Error(string(output))
-		return fmt.Errorf("failed to clone repository: %w", err)
+		return fmt.Errorf("failed to clone repository: %w\n", err)
 	}
 
-	lo.Info("cloned repository successfully")
+	lo.Info("cloned repository successfully\n")
 	return nil
 }
