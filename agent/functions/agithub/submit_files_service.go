@@ -81,7 +81,7 @@ func (s SubmitFileGitHubService) Caller(
 		}
 		s.logger.Debug(fmt.Sprintf("git add all: %s\n", out))
 
-		out, err = agit.GitCommit(s.logger, input.CommitMessageDetail)
+		out, err = agit.GitCommit(s.logger, input.CommitMessageShort, input.CommitMessageDetail)
 		if err != nil {
 			return submitFileOut, fmt.Errorf("submit file service: git commit error: %w", err)
 		}

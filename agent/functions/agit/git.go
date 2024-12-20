@@ -62,8 +62,8 @@ func GitAddAll(lo logger.Logger) (string, error) {
 	return string(output), err
 }
 
-func GitCommit(lo logger.Logger, commit string) (string, error) {
-	cmd := exec.Command("git", "commit", "-m", commit)
+func GitCommit(lo logger.Logger, commit string, detail string) (string, error) {
+	cmd := exec.Command("git", "commit", "-m", commit+"\n\n"+detail)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		lo.Error(string(output))

@@ -34,10 +34,6 @@ func main() {
 	//lo := logger.NewDefaultLogger()
 	lo := logger.NewPrinter()
 
-	// TODO: switch according to LLM model, or in Agent
-	//llmForwarder := models.NewAnthropicLLMForwarder(lo)
-	llmForwarder := models.NewOpenAILLMForwarder(lo)
-
 	cliIn, err := cli.ParseIssueInput()
 	if err != nil {
 		lo.Error("failed to parse input: %s", err)
@@ -54,6 +50,8 @@ func main() {
 		lo.Error("failed to change directory: %s", err)
 		os.Exit(1)
 	}
+
+	llmForwarder := models.SelectForwarder(lo, cliIn.Model)
 
 	promptTemplate, err := libprompt.LoadPromptTemplateFromYAML(cliIn.Template)
 	if err != nil {
