@@ -191,7 +191,10 @@ func main() {
 				startLine = nil
 			}
 			body := fmt.Sprintf("from %s\n", p.AgentName) +
-				r.ReviewComment + "\n\n" + "```suggestion\n" + r.Suggestion + "\n```\n"
+				r.ReviewComment
+			if r.Suggestion != "" {
+				body += "\n\n```suggestion\n" + r.Suggestion + "\n```\n"
+			}
 			comments = append(comments, &github.DraftReviewComment{
 				Path:      github.String(r.ReviewFilePath),
 				Body:      github.String(body),
