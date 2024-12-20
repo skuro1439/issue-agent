@@ -3,12 +3,12 @@ package agent
 import (
 	"context"
 	"fmt"
-	"github/clover0/github-issue-agent/store"
 
 	"github/clover0/github-issue-agent/functions"
 	"github/clover0/github-issue-agent/logger"
 	"github/clover0/github-issue-agent/prompt"
 	"github/clover0/github-issue-agent/step"
+	"github/clover0/github-issue-agent/store"
 )
 
 type AgentLike interface {

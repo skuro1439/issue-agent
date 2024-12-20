@@ -23,7 +23,7 @@ func InitFuncGetWebPageFromURLFunction() Function {
 			"properties": map[string]interface{}{
 				"url": map[string]interface{}{
 					"type":        "string",
-					"description": "The URL to get the web page",
+					"description": fmt.Sprintf("The URL to get the Web page. More than %d characters are cut off", maxTextLength),
 				},
 			},
 			"required":             []string{"url"},

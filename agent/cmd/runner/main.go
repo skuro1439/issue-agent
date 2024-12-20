@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 
@@ -34,7 +35,8 @@ func main() {
 	lo := logger.NewPrinter()
 
 	// TODO: switch according to LLM model, or in Agent
-	llmForwarder := models.NewAnthropicLLMForwarder(lo)
+	//llmForwarder := models.NewAnthropicLLMForwarder(lo)
+	llmForwarder := models.NewOpenAILLMForwarder(lo)
 
 	cliIn, err := cli.ParseIssueInput()
 	if err != nil {
@@ -188,7 +190,8 @@ func main() {
 			if r.ReviewStartLine == r.ReviewEndLine {
 				startLine = nil
 			}
-			body := r.ReviewComment + "\n\n" + "```suggestion\n" + r.Suggestion + "\n```\n"
+			body := fmt.Sprintf("from %s\n", p.AgentName) +
+				r.ReviewComment + "\n\n" + "```suggestion\n" + r.Suggestion + "\n```\n"
 			comments = append(comments, &github.DraftReviewComment{
 				Path:      github.String(r.ReviewFilePath),
 				Body:      github.String(body),
