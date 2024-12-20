@@ -128,7 +128,6 @@ func main() {
 		prompt,
 		parameter,
 		developer2Agent.ChangedFiles(),
-		cliIn.GithubIssueNumber,
 		submitServiceCaller,
 		lo, &dataStore, llmForwarder)
 	output := reviewManager.History()[len(reviewManager.History())-1].RawContent
@@ -164,7 +163,7 @@ func main() {
 		reviewer := RunReviewAgent(
 			p.AgentName,
 			prpt,
-			parameter, cliIn.GithubIssueNumber, submitServiceCaller, lo, &dataStore, llmForwarder)
+			parameter, submitServiceCaller, lo, &dataStore, llmForwarder)
 		output := reviewer.History()[len(reviewer.History())-1].RawContent
 
 		// parse JSON output
@@ -218,13 +217,6 @@ func main() {
 		}
 		lo.Info("Finish %s\n", p.AgentName)
 	}
-
-	//prompt, err = libprompt.BuildSecurityPrompt(promptTemplate, util.Map(developer2Agent.ChangedFiles(), func(f store.File) string { return f.Path }))
-	//if err != nil {
-	//	lo.Error("failed to build security prompt: %s", err)
-	//	os.Exit(1)
-	//}
-	//RunSecurityAgent(prompt, developer2Agent.ChangedFiles(), submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
 
 	lo.Info("Agents finished successfully!")
 }
@@ -281,42 +273,10 @@ func RunDeveloperAgent(
 	return ag
 }
 
-func RunSecurityAgent(
-	prompt libprompt.Prompt,
-	changedFiles []store.File,
-	submitServiceCaller functions.SubmitFilesCallerType,
-	parameter agent.Parameter,
-	lo logger.Logger,
-	dataStore *store.Store,
-	llmForwarder agent.LLMForwarder,
-) agent.Agent {
-	var changedFilePath []string
-	for _, f := range changedFiles {
-		changedFilePath = append(changedFilePath, f.Path)
-	}
-	ag := agent.NewAgent(
-		parameter,
-		"securityAgent",
-		lo,
-		submitServiceCaller,
-		prompt,
-		llmForwarder,
-		dataStore,
-	)
-
-	if _, err := ag.Work(); err != nil {
-		lo.Error("securityAgent failed: %s", err)
-		os.Exit(1)
-	}
-
-	return ag
-}
-
 func ReviewManagerAgent(
 	prompt libprompt.Prompt,
 	parameter agent.Parameter,
 	changedFiles []store.File,
-	prNumber string,
 	submitServiceCaller functions.SubmitFilesCallerType,
 	lo logger.Logger,
 	dataStore *store.Store,
@@ -348,7 +308,6 @@ func RunReviewAgent(
 	name string,
 	prompt libprompt.Prompt,
 	parameter agent.Parameter,
-	prNumber string,
 	submitServiceCaller functions.SubmitFilesCallerType, // TODO
 	lo logger.Logger,
 	dataStore *store.Store,
