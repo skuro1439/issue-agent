@@ -115,6 +115,10 @@ func main() {
 	}
 	developer2Agent := RunDeveloperAgent(prompt, submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
 
+	if s := dataStore.GetSubmission(store.LastSubmissionKey); s == nil {
+		lo.Error("submission is not found")
+		os.Exit(1)
+	}
 	submittedPRNumber := dataStore.GetSubmission(store.LastSubmissionKey).PullRequestNumber
 
 	prompt, err = libprompt.BuildReviewManagerPrompt(promptTemplate, issue, util.Map(developer2Agent.ChangedFiles(), func(f store.File) string { return f.Path }))
@@ -165,6 +169,7 @@ func main() {
 		output := reviewer.History()[len(reviewer.History())-1].RawContent
 
 		// parse JSON output
+		// TODO: validate
 		var reviews []struct {
 			ReviewFilePath  string `json:"review_file_path"`
 			ReviewStartLine int    `json:"review_start_line"`
@@ -184,6 +189,9 @@ func main() {
 		var comments []*github.DraftReviewComment
 		for _, r := range reviews {
 			startLine := github.Int(r.ReviewStartLine)
+			if *startLine == 0 {
+				*startLine = 1
+			}
 			if r.ReviewStartLine == r.ReviewEndLine {
 				startLine = nil
 			}
@@ -210,8 +218,7 @@ func main() {
 				Comments: comments,
 			},
 		); err != nil {
-			lo.Error("failed to create review: %s", err)
-			os.Exit(1)
+			lo.Error("failed to create pull request review: %s. but agent continue to work\n", err)
 		}
 		lo.Info("Finish %s\n", p.AgentName)
 	}
