@@ -15,7 +15,7 @@ type GetPullRequestDiffType func(input GetPullRequestDiffInput) (string, error)
 func InitGetPullRequestFunction(service RepositoryService) Function {
 	f := Function{
 		Name:        FuncGetPullRequestDiff,
-		Description: "Get a Pull Request diff",
+		Description: "Get a Pull Request diff as git diff patch format",
 		Func:        GetPullRequestDiffCaller(service),
 		FuncType:    reflect.TypeOf(GetPullRequestDiffCaller(service)),
 		Parameters: map[string]interface{}{

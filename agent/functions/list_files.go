@@ -11,7 +11,7 @@ const FuncListFiles = "list_files"
 func InitListFilesFunction() Function {
 	f := Function{
 		Name:        FuncListFiles,
-		Description: "List the files within the directory like Unix ls command. Each line contains the file mode, size, and name",
+		Description: "List the files within the directory like Unix ls command. Each line contains the file mode, byte size, and name",
 		Func:        ListFiles,
 		FuncType:    reflect.TypeOf(ListFiles),
 		Parameters: map[string]interface{}{
