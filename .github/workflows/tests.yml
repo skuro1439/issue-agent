@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    working-directory: ./agent
+
 jobs:
   test:
     runs-on: ubuntu-latest
