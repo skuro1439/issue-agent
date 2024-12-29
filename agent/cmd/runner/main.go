@@ -11,8 +11,8 @@ import (
 	"github.com/google/go-github/v66/github"
 
 	"github/clover0/github-issue-agent/agent"
+	"github/clover0/github-issue-agent/cli"
 	"github/clover0/github-issue-agent/config"
-	"github/clover0/github-issue-agent/config/cli"
 	"github/clover0/github-issue-agent/functions"
 	"github/clover0/github-issue-agent/functions/agithub"
 	"github/clover0/github-issue-agent/loader"

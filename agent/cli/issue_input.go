@@ -15,7 +15,6 @@ type IssueInputs struct {
 	FromFile          string
 }
 
-// TODO: parse common inputs
 func ParseIssueInput() (IssueInputs, error) {
 	cliIn := IssueInputs{
 		Common: &CommonInput{},
@@ -27,7 +26,6 @@ func ParseIssueInput() (IssueInputs, error) {
 
 	cmd.StringVar(&cliIn.GithubIssueNumber, "github_issue_number", "", "GitHubLoader issue number")
 	cmd.StringVar(&cliIn.BaseBranch, "base_branch", "", "Base Branch for pull request")
-	// TODO: make default setting
 	cmd.StringVar(&cliIn.FromFile, "from_file", "", "Issue content from file path")
 
 	if err := cmd.Parse(os.Args[2:]); err != nil {
