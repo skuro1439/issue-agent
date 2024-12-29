@@ -36,7 +36,14 @@ func main() {
 	//lo := logger.NewDefaultLogger()
 	lo := logger.NewPrinter()
 
-	cliIn, err := cli.ParseIssueInput()
+	flags, err := cli.Parse()
+	if err != nil {
+		lo.Error("failed to parse input: %s", err)
+		os.Exit(1)
+	}
+
+	// TODO: Enable the execution of other subcommands
+	cliIn, err := cli.ParseIssueInput(flags)
 	if err != nil {
 		lo.Error("failed to parse input: %s", err)
 		os.Exit(1)

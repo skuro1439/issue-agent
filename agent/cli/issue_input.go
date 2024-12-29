@@ -3,8 +3,6 @@ package cli
 import (
 	"flag"
 	"fmt"
-	"os"
-
 	"github.com/go-playground/validator/v10"
 )
 
@@ -15,7 +13,7 @@ type IssueInputs struct {
 	FromFile          string
 }
 
-func ParseIssueInput() (IssueInputs, error) {
+func ParseIssueInput(flags []string) (IssueInputs, error) {
 	cliIn := IssueInputs{
 		Common: &CommonInput{},
 	}
@@ -28,7 +26,7 @@ func ParseIssueInput() (IssueInputs, error) {
 	cmd.StringVar(&cliIn.BaseBranch, "base_branch", "", "Base Branch for pull request")
 	cmd.StringVar(&cliIn.FromFile, "from_file", "", "Issue content from file path")
 
-	if err := cmd.Parse(os.Args[2:]); err != nil {
+	if err := cmd.Parse(flags); err != nil {
 		return IssueInputs{}, fmt.Errorf("failed to parse input: %w", err)
 	}
 
