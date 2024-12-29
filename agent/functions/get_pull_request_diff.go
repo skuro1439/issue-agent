@@ -1,9 +1,5 @@
 package functions
 
-import (
-	"reflect"
-)
-
 const FuncGetPullRequestDiff = "get_pull_request_diff"
 
 type RepositoryService interface {
@@ -17,7 +13,6 @@ func InitGetPullRequestFunction(service RepositoryService) Function {
 		Name:        FuncGetPullRequestDiff,
 		Description: "Get a Pull Request diff as git diff patch format",
 		Func:        GetPullRequestDiffCaller(service),
-		FuncType:    reflect.TypeOf(GetPullRequestDiffCaller(service)),
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

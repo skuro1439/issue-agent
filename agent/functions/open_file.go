@@ -12,8 +12,7 @@ const FuncOpenFile = "open_file"
 
 func InitOpenFileFunction() Function {
 	f := Function{
-		Name: FuncOpenFile,
-
+		Name:        FuncOpenFile,
 		Description: "Open the file full content",
 		Func:        OpenFile,
 		Parameters: map[string]interface{}{

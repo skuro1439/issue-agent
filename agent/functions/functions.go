@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 	"slices"
 	"strings"
 
@@ -58,7 +57,6 @@ type Function struct {
 	Name        FuncName
 	Description string
 	Func        any
-	FuncType    reflect.Type
 	Parameters  map[string]interface{}
 }
 
