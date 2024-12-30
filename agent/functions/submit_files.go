@@ -23,7 +23,7 @@ func InitSubmitFilesGitHubFunction() Function {
 					"description": "Pull Request Content",
 				},
 			},
-			"required":             []string{"commit_message", "pull_request_content"},
+			"required":             []string{"commit_message_short", "pull_request_content"},
 			"additionalProperties": false,
 		},
 	}

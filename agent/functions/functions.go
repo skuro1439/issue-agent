@@ -29,7 +29,7 @@ func InitializeFunctions(
 		InitModifyFileFunction()
 	}
 	// TODO:
-	if !noSubmit && allowFunction(allowFunctions, FuncModifyFile) {
+	if !noSubmit && allowFunction(allowFunctions, FuncSubmitFiles) {
 		InitSubmitFilesGitHubFunction()
 	}
 	if allowFunction(allowFunctions, FuncGetWebSearchResult) {
