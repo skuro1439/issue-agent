@@ -32,8 +32,8 @@ type Config struct {
 			Repository      string `yaml:"repository"`
 			BaseBranch      string `yaml:"base_branch"`
 		}
+		AllowFunctions []string `yaml:"allow_functions"`
 	} `yaml:"agent"`
-	AllowFunctions []string `yaml:"allow_functions"`
 }
 
 func Load(path string) (Config, error) {

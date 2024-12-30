@@ -41,6 +41,9 @@ func InitializeFunctions(
 	if allowFunction(allowFunctions, FuncGetPullRequestDiff) {
 		InitGetPullRequestFunction(repoService)
 	}
+	if allowFunction(allowFunctions, FuncSearchFiles) {
+		InitSearchFilesFunction()
+	}
 }
 
 func allowFunction(allowFunctions []string, name string) bool {
@@ -217,7 +220,17 @@ func ExecFunction(store *libstore.Store, funcName FuncName, argsJson string, opt
 			return "", fmt.Errorf("cat not call %s function", FuncGetPullRequestDiff)
 		}
 		return fn(input)
-
+	case FuncSearchFiles:
+		fmt.Println("functions: do search_files")
+		input := SearchFilesInput{}
+		if err := marshalFuncArgs(argsJson, &input); err != nil {
+			return "", fmt.Errorf("failed to unmarshal args: %w", err)
+		}
+		r, err := SearchFiles(input)
+		if err != nil {
+			return "", err
+		}
+		return strings.Join(r, "\n"), nil
 	}
 
 	return "", errors.New("function not found")

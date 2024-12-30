@@ -83,24 +83,24 @@ func main() {
 	functions.InitializeFunctions(
 		conf.Agent.GitHub.NoSubmit,
 		agithub.NewGitHubService(conf.Agent.GitHub.Owner, conf.Agent.GitHub.Repository, gh, lo),
-		conf.AllowFunctions,
+		conf.Agent.AllowFunctions,
 	)
-	lo.Info("allowed functions: %s", conf.AllowFunctions)
+	lo.Info("allowed functions: %s\n", conf.Agent.AllowFunctions)
 
 	var issLoader loader.Loader
 	var issue loader.Issue
 	if len(cliIn.FromFile) > 0 {
-		lo.Info("load issue from file")
+		lo.Info("load issue from file\n")
 		issLoader = loader.NewFileLoader()
 		if issue, err = issLoader.LoadIssue(ctx, cliIn.FromFile); err != nil {
-			lo.Error("failed to load issue from file: %s", err)
+			lo.Error("failed to load issue from file: %s\n", err)
 			os.Exit(1)
 		}
 	} else {
 		lo.Info("load issue from GitHub")
 		issLoader = loader.NewGitHubLoader(gh, conf.Agent.GitHub.Owner, conf.Agent.GitHub.Repository)
 		if issue, err = issLoader.LoadIssue(ctx, cliIn.GithubIssueNumber); err != nil {
-			lo.Error("failed to load issue from GitHub: %s", err)
+			lo.Error("failed to load issue from GitHub: %s\n", err)
 			os.Exit(1)
 		}
 	}
@@ -135,7 +135,7 @@ func main() {
 	developer2Agent := RunDeveloperAgent(prompt, submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
 
 	if s := dataStore.GetSubmission(store.LastSubmissionKey); s == nil {
-		lo.Error("submission is not found")
+		lo.Error("submission is not found\n")
 		os.Exit(1)
 	}
 	submittedPRNumber := dataStore.GetSubmission(store.LastSubmissionKey).PullRequestNumber

@@ -61,5 +61,5 @@ agent:
     - modify_file
     - open_file
     - put_file
-    - submit_file_service
     - submit_files
+    - search_files
