@@ -85,7 +85,10 @@ func main() {
 		agithub.NewGitHubService(conf.Agent.GitHub.Owner, conf.Agent.GitHub.Repository, gh, lo),
 		conf.Agent.AllowFunctions,
 	)
-	lo.Info("allowed functions: %s\n", conf.Agent.AllowFunctions)
+	lo.Info("allowed functions: %s\n", strings.Join(util.Map(
+		functions.AllFunctions(),
+		func(e functions.Function) string { return e.Name.String() },
+	), ","))
 
 	var issLoader loader.Loader
 	var issue loader.Issue
