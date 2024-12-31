@@ -32,7 +32,8 @@ func (a AnthropicLLMForwarder) StartForward(input agent.StartCompletionInput) ([
 	history = append(history, initialHistory...)
 
 	a.anthropic.logger.Info(logger.Green(fmt.Sprintf("model: %s, sending message...\n", input.Model)))
-	a.anthropic.logger.Debug("%s\n", input.StartUserPrompt)
+	a.anthropic.logger.Debug("system prompt:\n%s\n", input.SystemPrompt)
+	a.anthropic.logger.Debug("user prompt:\n%s\n", input.StartUserPrompt)
 	resp, err := a.anthropic.Messages.Create(context.TODO(), params)
 	if err != nil {
 		return nil, err

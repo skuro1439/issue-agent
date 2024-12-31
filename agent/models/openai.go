@@ -63,7 +63,9 @@ func (o OpenAI) StartCompletion(ctx context.Context, input agent.StartCompletion
 	params, historyInitial := o.createCompletionParams(input)
 	history = append(history, historyInitial...)
 
-	o.debugShowSendingMsg(params)
+	o.logger.Info(logger.Green(fmt.Sprintf("model: %s, sending message...\n", input.Model)))
+	o.logger.Debug("system prompt:\n%s\n", input.SystemPrompt)
+	o.logger.Debug("user prompt:\n%s\n", input.StartUserPrompt)
 	chat, err := o.client.Chat.Completions.New(ctx, params)
 	if err != nil {
 		return nil, err

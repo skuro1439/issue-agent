@@ -83,7 +83,7 @@ func FunctionByName(name string) (Function, error) {
 }
 
 // AllFunctions returns all functions
-// WARNING: Called initialization functions before calling this function
+// WARNING: Call InitializeFunctions before calling this function
 func AllFunctions() []Function {
 	var fns []Function
 	for _, f := range functionsMap {
