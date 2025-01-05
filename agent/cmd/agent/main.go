@@ -38,20 +38,20 @@ func main() {
 
 	flags, err := cli.Parse()
 	if err != nil {
-		lo.Error("failed to parse input: %s", err)
+		lo.Error("failed to parse input: %s\n", err)
 		os.Exit(1)
 	}
 
 	// TODO: Enable the execution of other subcommands
 	cliIn, err := cli.ParseIssueInput(flags)
 	if err != nil {
-		lo.Error("failed to parse input: %s", err)
+		lo.Error("failed to parse input: %s\n", err)
 		os.Exit(1)
 	}
 
 	conf, err := config.Load(cliIn.Common.Config)
 	if err != nil {
-		lo.Error("failed to load config: %s", err)
+		lo.Error("failed to load config: %s\n", err)
 		os.Exit(1)
 	}
 
@@ -64,7 +64,7 @@ func main() {
 
 	// TODO: no dependency with changing directory
 	if err := os.Chdir(conf.WorkDir); err != nil {
-		lo.Error("failed to change directory: %s", err)
+		lo.Error("failed to change directory: %s\n", err)
 		os.Exit(1)
 	}
 
@@ -72,7 +72,7 @@ func main() {
 
 	promptTemplate, err := libprompt.LoadPromptTemplateFromYAML(conf.Agent.PromptTemplate)
 	if err != nil {
-		lo.Error("failed to load prompt template: %s", err)
+		lo.Error("failed to load prompt template: %s\n", err)
 		os.Exit(1)
 	}
 
@@ -245,7 +245,7 @@ func main() {
 		lo.Info("Finish %s\n", p.AgentName)
 	}
 
-	lo.Info("Agents finished successfully!")
+	lo.Info("Agents finished successfully!\n")
 }
 
 func RunRequirementAgent(
@@ -267,7 +267,7 @@ func RunRequirementAgent(
 	)
 
 	if _, err := ag.Work(); err != nil {
-		lo.Error("requirement agent failed: %s", err)
+		lo.Error("requirement agent failed: %s\n", err)
 		os.Exit(1)
 	}
 
@@ -293,7 +293,7 @@ func RunDeveloperAgent(
 	)
 
 	if _, err := ag.Work(); err != nil {
-		lo.Error("ag failed: %s", err)
+		lo.Error("agent failed: %s\n", err)
 		os.Exit(1)
 	}
 
@@ -324,7 +324,7 @@ func ReviewManagerAgent(
 	)
 
 	if _, err := ag.Work(); err != nil {
-		lo.Error("reviewManagerAgent failed: %s", err)
+		lo.Error("reviewManagerAgent failed: %s\n", err)
 		os.Exit(1)
 	}
 
@@ -351,7 +351,7 @@ func RunReviewAgent(
 	)
 
 	if _, err := ag.Work(); err != nil {
-		lo.Error("%s failed: %s", name, err)
+		lo.Error("%s failed: %s\n", name, err)
 		os.Exit(1)
 	}
 

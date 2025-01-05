@@ -46,9 +46,9 @@ func (l DefaultLogger) Debug(msg string, args ...any) {
 type logLevel int
 
 const (
+	Error logLevel = 10
+	Info  logLevel = 20
 	Debug logLevel = 30
-	Info  logLevel = 10
-	Error logLevel = 20
 )
 
 type Printer struct {
@@ -64,19 +64,19 @@ func NewPrinter() Logger {
 }
 
 func (l Printer) Info(msg string, args ...any) {
-	if l.level >= Info {
+	if Info <= l.level {
 		fmt.Printf(msg, args...)
 	}
 }
 
 func (l Printer) Error(msg string, args ...any) {
-	if l.level >= Error {
+	if Error <= l.level {
 		fmt.Printf(msg, args...)
 	}
 }
 
 func (l Printer) Debug(msg string, args ...any) {
-	if l.level >= Debug {
+	if l.level <= Debug {
 		fmt.Printf(msg, args...)
 	}
 }
