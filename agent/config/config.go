@@ -15,6 +15,8 @@ func DefaultConfig() []byte {
 	return defaultConfig
 }
 
+const ConfigFilePath = "/agent/config/config.yaml"
+
 type Config struct {
 	WorkDir string `yaml:"workdir"`
 	Agent   struct {
@@ -43,6 +45,7 @@ func Load(path string) (Config, error) {
 	if path == "" {
 		data = defaultConfig
 	} else {
+		path = ConfigFilePath
 		file, err := os.Open(path)
 		if err != nil {
 			return cnfg, err

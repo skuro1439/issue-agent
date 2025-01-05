@@ -9,3 +9,6 @@ build: $(TEMPDIR)
 .PHONY: test
 test:
 	go test ./... -v -parallel 4 -race
+
+dev/image:
+	docker build -t agent-dev -f dev.Dockerfile .
