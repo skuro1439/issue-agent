@@ -15,6 +15,8 @@ import (
 	"github/clover0/github-issue-agent/config"
 )
 
+const defaultConfigPath = "./issue_agent.yml"
+
 func main() {
 	// TODO: input args for issue command
 
@@ -30,7 +32,7 @@ func main() {
 			passEnvs = append(passEnvs, env)
 		}
 	}
-	configPath, err := GetConfigPath()
+	configPath, err := GetConfigPathOrDefault()
 	if err != nil {
 		panic(err)
 	}
@@ -57,10 +59,14 @@ func main() {
 	args = append(args, imageName)
 	args = append(args, "agent")
 	args = append(args, os.Args[1:]...)
-	//args = append(args, "echo", "hello")
+	for _, a := range os.Args[1:] {
+		if strings.HasSuffix(a, "-config") {
+			break
+		}
+		args = append(args, "-config", configPath)
+	}
 
 	cmd := exec.CommandContext(ctx, dockerCmd(), args...)
-
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -100,17 +106,23 @@ func stopContainer(containerName string) {
 	fmt.Println(string(bytes))
 }
 
-func GetConfigPath() (string, error) {
+func GetConfigPathOrDefault() (string, error) {
 	configStart := len(os.Args)
+	foundConfig := false
 	for i, arg := range os.Args {
 		if strings.HasSuffix(arg, "-config") {
 			configStart = i
+			foundConfig = true
 			break
 		}
 	}
 
+	if !foundConfig {
+		return filepath.Abs(defaultConfigPath)
+	}
+
 	if len(os.Args) <= configStart+1 {
-		return "", fmt.Errorf("-config option is required")
+		return "", fmt.Errorf("-config option value is required")
 	}
 
 	path := os.Args[configStart+1]
