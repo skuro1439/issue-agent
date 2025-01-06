@@ -12,13 +12,9 @@ type Logger interface {
 	Debug(msg string, args ...any)
 }
 
-func NewDefaultLogger() Logger {
+func NewDefaultLogger(level string) Logger {
 	opt := &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}
-
-	if lvl := os.Getenv("LOG_LEVEL"); lvl == "debug" {
-		opt.Level = slog.LevelDebug
+		Level: slogLevel(level),
 	}
 
 	l := slog.New(slog.NewTextHandler(os.Stdout, opt))
@@ -43,40 +39,44 @@ func (l DefaultLogger) Debug(msg string, args ...any) {
 	l.logger.Debug(msg, args...)
 }
 
-type logLevel int
-
-const (
-	Error logLevel = 10
-	Info  logLevel = 20
-	Debug logLevel = 30
-)
-
 type Printer struct {
-	level logLevel
+	level slog.Level
 }
 
-func NewPrinter() Logger {
-	level := Info
-	if lvl := os.Getenv("LOG_LEVEL"); lvl == "debug" {
-		level = Debug
-	}
+func NewPrinter(levelStr string) Logger {
+	level := slogLevel(levelStr)
+
 	return Printer{level}
 }
 
+func (l Printer) Debug(msg string, args ...any) {
+	if l.level <= slog.LevelDebug {
+		fmt.Printf(msg, args...)
+	}
+}
 func (l Printer) Info(msg string, args ...any) {
-	if Info <= l.level {
+	if l.level <= slog.LevelInfo {
 		fmt.Printf(msg, args...)
 	}
 }
 
 func (l Printer) Error(msg string, args ...any) {
-	if Error <= l.level {
+	if l.level <= slog.LevelError {
 		fmt.Printf(msg, args...)
 	}
 }
 
-func (l Printer) Debug(msg string, args ...any) {
-	if l.level <= Debug {
-		fmt.Printf(msg, args...)
+func slogLevel(l string) slog.Level {
+	switch l {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "error":
+		return slog.LevelError
+	case "":
+		return slog.LevelInfo
+	default:
+		panic(fmt.Sprintf("unknown log level: %s", l))
 	}
 }

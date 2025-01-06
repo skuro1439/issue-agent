@@ -2,16 +2,21 @@
 # Required
 workdir: "/tmp/repositories"
 
+# Required
+# debug, info, error
+log_level: "info"
+
 agent:
 
   # Default prompt template is embed config.
+  # e.g) config/prompt_template_en.yml
   prompt_template: ""
 
   # LLM model name
   model: "gpt-4o"
 
   # Maximum steps to run agent
-  # 1 spte as LLM to user
+  # 1 step as LLM to user
   # 1 step as user execution function
   max_steps: 100
 

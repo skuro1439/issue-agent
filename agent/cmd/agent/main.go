@@ -34,7 +34,7 @@ func newGitHub() *github.Client {
 func main() {
 	// TODO:
 	//lo := logger.NewDefaultLogger()
-	lo := logger.NewPrinter()
+	lo := logger.NewPrinter("error")
 
 	flags, err := cli.Parse()
 	if err != nil {
@@ -54,6 +54,8 @@ func main() {
 		lo.Error("failed to load config: %s\n", err)
 		os.Exit(1)
 	}
+
+	lo = logger.NewPrinter(conf.LogLevel)
 
 	if conf.Agent.GitHub.CloneRepository {
 		if err := agithub.CloneRepository(lo, conf); err != nil {

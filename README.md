@@ -65,7 +65,6 @@ docker compose run --rm \
   -e GITHUB_TOKEN=$(gh auth token) \
   -e OPENAI_API_KEY=${OPENAI_API_KEY} \
   -e ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY} \
-  -e LOG_LEVEL=debug \
   agent \
   go run cmd/runner/main.go issue \
     -config issue_agent.yml \
