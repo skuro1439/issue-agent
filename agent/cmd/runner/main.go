@@ -26,32 +26,12 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Pass only the environment variables that are required by the agent.
-	// This is to avoid passing sensitive information to the container.
-	var passEnvs []string
-	for _, env := range os.Environ() {
-		envName := strings.Split(env, "=")[0]
-		if slices.Contains(cli.EnvNames(), envName) {
-			passEnvs = append(passEnvs, env)
-		}
-	}
-
-	configPath, err := GetConfigPathOrDefault()
+	configPath, err := getConfigPathOrDefault()
 	if err != nil {
 		panic(err)
 	}
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	defer signal.Stop(sigChan)
-
-	var dockerEnvs []string
-	for _, env := range passEnvs {
-		varName := strings.Split(env, "=")
-		if len(varName) == 2 {
-			dockerEnvs = append(dockerEnvs, "-e", env)
-		}
-	}
+	dockerEnvs := passEnvs()
 	containerName := "issue-agent"
 	args := []string{
 		"run",
@@ -79,6 +59,10 @@ func main() {
 		panic(err)
 	}
 
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(sigChan)
+
 	go func(containerName string) {
 		sig := <-sigChan
 		fmt.Println("Received signal")
@@ -101,6 +85,7 @@ func dockerCmd() string {
 	if ok {
 		return com
 	}
+
 	return "docker"
 }
 
@@ -110,7 +95,7 @@ func stopContainer(containerName string) {
 	fmt.Println(string(bytes))
 }
 
-func GetConfigPathOrDefault() (string, error) {
+func getConfigPathOrDefault() (string, error) {
 	configStart := len(os.Args)
 	foundConfig := false
 	for i, arg := range os.Args {
@@ -134,5 +119,28 @@ func GetConfigPathOrDefault() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return path, nil
+}
+
+// Pass only the environment variables that are required by the agent.
+// This is to avoid passing sensitive information to the container.
+func passEnvs() []string {
+	var passEnvs []string
+	for _, env := range os.Environ() {
+		envName := strings.Split(env, "=")[0]
+		if slices.Contains(cli.EnvNames(), envName) {
+			passEnvs = append(passEnvs, env)
+		}
+	}
+
+	var dockerEnvs []string
+	for _, env := range passEnvs {
+		varName := strings.Split(env, "=")
+		if len(varName) == 2 {
+			dockerEnvs = append(dockerEnvs, "-e", env)
+		}
+	}
+
+	return dockerEnvs
 }
