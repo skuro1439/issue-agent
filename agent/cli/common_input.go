@@ -9,5 +9,5 @@ type CommonInput struct {
 }
 
 func addCommonFlags(fs *flag.FlagSet, cfg *CommonInput) {
-	fs.StringVar(&cfg.Config, "config", "", "Path to the configuration file. Default is `config/default_config.yaml`")
+	fs.StringVar(&cfg.Config, "config", "", "Path to the configuration file. Default is `config/default_config.yml`")
 }

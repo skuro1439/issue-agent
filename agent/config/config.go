@@ -8,14 +8,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//go:embed default_config.yaml
+//go:embed default_config.yml
 var defaultConfig []byte
 
 func DefaultConfig() []byte {
 	return defaultConfig
 }
 
-const ConfigFilePath = "/agent/config/config.yaml"
+const ConfigFilePath = "/agent/config/config.yml"
 
 type Config struct {
 	WorkDir string `yaml:"workdir"`

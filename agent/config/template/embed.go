@@ -2,7 +2,7 @@ package template
 
 import _ "embed"
 
-//go:embed default_prompt_ja.yaml
+//go:embed default_prompt_ja.yml
 var defaultJAPrompt []byte
 
 func DefaultTemplate() []byte {

@@ -20,7 +20,7 @@ Only GitHub pull requests are supported.
 ### Startup Example
 - Set up the config file
 ```
-cp agent/config/default_config.yaml agent/config.yaml
+cp agent/config/default_config.yml agent/issue_agent.yml
 ```
 
 ```yaml
@@ -68,7 +68,7 @@ docker compose run --rm \
   -e LOG_LEVEL=debug \
   agent \
   go run cmd/runner/main.go issue \
-    -config config.yaml \
+    -config issue_agent.yml \
     -github_issue_number 123 \
     -base_branch master
 ```
