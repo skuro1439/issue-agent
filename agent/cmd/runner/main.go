@@ -17,6 +17,7 @@ import (
 
 const defaultConfigPath = "./issue_agent.yml"
 
+// Use the docker command to start a container and execute the agent binary
 func main() {
 	// TODO: input args for issue command
 
@@ -25,6 +26,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Pass only the environment variables that are required by the agent.
+	// This is to avoid passing sensitive information to the container.
 	var passEnvs []string
 	for _, env := range os.Environ() {
 		envName := strings.Split(env, "=")[0]
@@ -32,6 +35,7 @@ func main() {
 			passEnvs = append(passEnvs, env)
 		}
 	}
+
 	configPath, err := GetConfigPathOrDefault()
 	if err != nil {
 		panic(err)
@@ -57,7 +61,7 @@ func main() {
 	}
 	args = append(args, dockerEnvs...)
 	args = append(args, imageName)
-	args = append(args, "agent")
+	args = append(args, "agent") // agent binary is built by agent/main.go
 	args = append(args, os.Args[1:]...)
 	for _, a := range os.Args[1:] {
 		if strings.HasSuffix(a, "-config") {
