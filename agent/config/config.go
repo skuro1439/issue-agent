@@ -27,7 +27,7 @@ type Config struct {
 	Agent    struct {
 		PromptTemplate string `yaml:"prompt_template"`
 		Model          string `yaml:"model" validate:"required"`
-		MaxSteps       int    `yaml:"max_steps"`
+		MaxSteps       int    `yaml:"max_steps" validate:"gte=0"`
 		Git            struct {
 			UserName  string `yaml:"user_name" validate:"required"`
 			UserEmail string `yaml:"user_email" validate:"required"`
