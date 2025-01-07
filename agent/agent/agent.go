@@ -6,6 +6,7 @@ import (
 
 	"github/clover0/github-issue-agent/functions"
 	"github/clover0/github-issue-agent/logger"
+	"github/clover0/github-issue-agent/models"
 	"github/clover0/github-issue-agent/prompt"
 	"github/clover0/github-issue-agent/step"
 	"github/clover0/github-issue-agent/store"
@@ -21,9 +22,9 @@ type Agent struct {
 	currentStep         step.Step
 	logg                logger.Logger
 	submitServiceCaller functions.SubmitFilesCallerType
-	llmForwarder        LLMForwarder
+	llmForwarder        models.LLMForwarder
 	prompt              prompt.Prompt
-	history             []LLMMessage
+	history             []models.LLMMessage
 	store               *store.Store
 }
 
@@ -33,7 +34,7 @@ func NewAgent(
 	logg logger.Logger,
 	submitServiceCaller functions.SubmitFilesCallerType,
 	prompt prompt.Prompt,
-	forwarder LLMForwarder,
+	forwarder models.LLMForwarder,
 	store *store.Store,
 ) Agent {
 	return Agent{
@@ -52,7 +53,7 @@ func (a *Agent) Work() (lastOutput string, err error) {
 	ctx := context.Background()
 	a.logg.Info("[%s]start agent work\n", a.name)
 
-	completionInput := StartCompletionInput{
+	completionInput := models.StartCompletionInput{
 		Model:           a.parameter.Model,
 		SystemPrompt:    a.prompt.SystemPrompt,
 		StartUserPrompt: a.prompt.StartUserPrompt,
@@ -127,11 +128,11 @@ func (a *Agent) Work() (lastOutput string, err error) {
 	return lastOutput, nil
 }
 
-func (a *Agent) updateHistory(history []LLMMessage) {
+func (a *Agent) updateHistory(history []models.LLMMessage) {
 	a.history = history
 }
 
-func (a *Agent) History() []LLMMessage {
+func (a *Agent) History() []models.LLMMessage {
 	return a.history
 }
 
