@@ -10,9 +10,10 @@ import (
 func main() {
 	// TODO:
 	//lo := logger.NewDefaultLogger()
-	lo := logger.NewPrinter("error")
+	lo := logger.NewPrinter("info")
+	lo.Info("start agent on container...\n")
 
-	if err := cli.Execute(lo); err != nil {
+	if err := cli.Execute(); err != nil {
 		lo.Error("failed to execute command: %s\n", err)
 		os.Exit(1)
 	}

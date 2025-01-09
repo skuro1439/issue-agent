@@ -9,8 +9,9 @@ log_level: "info"
 agent:
 
   # Default prompt template is embed config.
+  # prompt_path is a relative path from the execution directory.
   # e.g) config/prompt_template_en.yml
-  prompt_template: ""
+  prompt_path: ""
 
   # LLM model name
   model: "gpt-4o"
@@ -46,15 +47,6 @@ agent:
     # Required
     # Base branch to operate. Pull Request will be created to this branch.
     base_branch: "main"
-
-    # Issue number
-    # e.g) 873
-    # you need to use this option or issue_from_file
-    # issue_number: ""
-
-    # Issue file path (path/to/file)
-    # issue_from_file: ""
-
 
   # Allow agent to use function.
   # Belows are the default functions.

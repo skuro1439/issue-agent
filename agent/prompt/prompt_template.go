@@ -6,6 +6,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github/clover0/github-issue-agent/config"
 	"github/clover0/github-issue-agent/config/template"
 )
 
@@ -17,7 +18,11 @@ type PromptTemplate struct {
 	}
 }
 
-func LoadPromptTemplateFromYAML(filePath string) (PromptTemplate, error) {
+func LoadPromptDefault() (PromptTemplate, error) {
+	return LoadPrompt(config.PromptFilePath)
+}
+
+func LoadPrompt(filePath string) (PromptTemplate, error) {
 	var pt PromptTemplate
 
 	var data []byte
@@ -28,6 +33,8 @@ func LoadPromptTemplateFromYAML(filePath string) (PromptTemplate, error) {
 		if err != nil {
 			return pt, err
 		}
+		defer file.Close()
+
 		data, err = io.ReadAll(file)
 		if err != nil {
 			return pt, err

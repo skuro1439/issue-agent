@@ -35,7 +35,7 @@ func OrchestrateAgents(
 ) error {
 	llmForwarder := models.SelectForwarder(lo, conf.Agent.Model)
 
-	promptTemplate, err := libprompt.LoadPromptTemplateFromYAML(conf.Agent.PromptTemplate)
+	promptTemplate, err := libprompt.LoadPromptDefault()
 	if err != nil {
 		lo.Error("failed to load prompt template: %s\n", err)
 		return err

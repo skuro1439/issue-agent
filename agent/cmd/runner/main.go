@@ -19,10 +19,6 @@ const defaultConfigPath = "./issue_agent.yml"
 
 // Use the docker command to start a container and execute the agent binary
 func main() {
-	// TODO: input args for issue command
-
-	imageName := "agent-dev"
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -31,13 +27,29 @@ func main() {
 		panic(err)
 	}
 
+	conf, err := config.Load(configPath)
+	if err != nil {
+		panic(err)
+	}
+
+	imageName := "agent-dev"
 	dockerEnvs := passEnvs()
 	containerName := "issue-agent"
 	args := []string{
 		"run",
 		"--rm",
 		"--name", containerName,
-		"-v", configPath + ":" + config.ConfigFilePath,
+	}
+	if len(configPath) > 0 {
+		args = append(args, "-v", configPath+":"+config.ConfigFilePath)
+	}
+	if len(conf.Agent.PromptPath) > 0 {
+		path, err := filepath.Abs(conf.Agent.PromptPath)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("prompt path:", path)
+		args = append(args, "-v", path+":"+config.PromptFilePath)
 	}
 	args = append(args, dockerEnvs...)
 	args = append(args, imageName)
@@ -106,7 +118,12 @@ func getConfigPathOrDefault() (string, error) {
 		}
 	}
 
+	// when -config option not found
+	// default config file or empty
 	if !foundConfig {
+		if _, err := os.Stat(defaultConfigPath); err != nil {
+			return "", nil
+		}
 		return filepath.Abs(defaultConfigPath)
 	}
 

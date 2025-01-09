@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/google/go-github/v66/github"
@@ -13,20 +14,18 @@ import (
 	"github/clover0/github-issue-agent/logger"
 )
 
-func IssueCommand(lo logger.Logger, flags []string) error {
+func IssueCommand(flags []string) error {
 	cliIn, err := ParseIssueInput(flags)
 	if err != nil {
-		lo.Error("failed to parse input: %s\n", err)
-		return err
+		return fmt.Errorf("failed to parse input: %w", err)
 	}
 
-	conf, err := config.Load(cliIn.Common.Config)
+	conf, err := config.LoadDefault()
 	if err != nil {
-		lo.Error("failed to load config: %s\n", err)
-		return err
+		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	lo = logger.NewPrinter(conf.LogLevel)
+	lo := logger.NewPrinter(conf.LogLevel)
 
 	if conf.Agent.GitHub.CloneRepository {
 		if err := agithub.CloneRepository(lo, conf); err != nil {

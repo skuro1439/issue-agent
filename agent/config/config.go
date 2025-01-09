@@ -15,6 +15,7 @@ var defaultConfig []byte
 
 const (
 	ConfigFilePath = "/agent/config/config.yml"
+	PromptFilePath = "/agent/config/prompt.yml"
 
 	LogDebug = "debug"
 	LogInfo  = "info"
@@ -25,10 +26,10 @@ type Config struct {
 	WorkDir  string `yaml:"workdir" validate:"required"`
 	LogLevel string `yaml:"log_level" validate:"log_level"`
 	Agent    struct {
-		PromptTemplate string `yaml:"prompt_template"`
-		Model          string `yaml:"model" validate:"required"`
-		MaxSteps       int    `yaml:"max_steps" validate:"gte=0"`
-		Git            struct {
+		PromptPath string `yaml:"prompt_path"`
+		Model      string `yaml:"model" validate:"required"`
+		MaxSteps   int    `yaml:"max_steps" validate:"gte=0"`
+		Git        struct {
 			UserName  string `yaml:"user_name" validate:"required"`
 			UserEmail string `yaml:"user_email" validate:"required"`
 		} `yaml:"git"`
@@ -37,7 +38,6 @@ type Config struct {
 			CloneRepository bool   `yaml:"clone_repository"`
 			Owner           string `yaml:"owner" validate:"required"`
 			Repository      string `yaml:"repository" validate:"required"`
-			BaseBranch      string `yaml:"base_branch" validate:"required"`
 		}
 		AllowFunctions []string `yaml:"allow_functions" validate:"required"`
 	} `yaml:"agent" validate:"required"`
@@ -53,6 +53,10 @@ func isValidLogLevel(fl validator.FieldLevel) bool {
 	return false
 }
 
+func LoadDefault() (Config, error) {
+	return Load(ConfigFilePath)
+}
+
 func Load(path string) (Config, error) {
 	var cnfg Config
 
@@ -60,11 +64,12 @@ func Load(path string) (Config, error) {
 	if path == "" {
 		data = defaultConfig
 	} else {
-		path = ConfigFilePath
 		file, err := os.Open(path)
 		if err != nil {
 			return cnfg, err
 		}
+		defer file.Close()
+
 		data, err = io.ReadAll(file)
 		if err != nil {
 			return cnfg, err
