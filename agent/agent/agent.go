@@ -119,10 +119,10 @@ func (a *Agent) Work() (lastOutput string, err error) {
 
 		case step.Unrecoverable, step.Unknown:
 			a.logg.Error("unrecoverable error: %s\n", a.currentStep.UnrecoverableErr)
-			return lastOutput, err
+			return lastOutput, fmt.Errorf("unrecoverable error: %s", a.currentStep.UnrecoverableErr)
 		default:
 			a.logg.Error("does not exist step type\n")
-			return lastOutput, err
+			return lastOutput, fmt.Errorf("does not exist step type")
 		}
 	}
 	return lastOutput, nil

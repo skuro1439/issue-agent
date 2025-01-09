@@ -56,7 +56,9 @@ agents:
       <instructions>
       * Understand the overall structure of the repository's codebase before proceeding
       * Create or edit files as necessary to write code to achieve the issue
-      * Use submit_files to fill out and submit the submission template
+      * Fill out the submission-template in {{.communicationLanguage}} and submit using submit_files
+      * Development instructions should be followed
+      {{.instruction}}
       </instructions>
 
       Note: Indentation is very important! When editing files, insert appropriate indentation at the beginning of each line!
@@ -68,22 +70,17 @@ agents:
       </important>
 
       <submission-template>
-      from Agent
+      written by Agent
 
-      # Background
+      # Reason and Background 
       Write the reason for the changes here
 
       # Content
       Write what was added or created along with the reasons here
 
       # Issue
-      Write only the issue number of the task here
-
+       #{{.issueNumber}}
       </submission-template>
-
-      <instruction>
-      {{.instruction}}
-      </instruction>
 
   - name: review-manager
     system_prompt: |-
@@ -113,7 +110,7 @@ agents:
       * Review perspectives can include security, governance, etc., but other perspectives are also acceptable
       * Assign one perspective per agent and generate a maximum of one prompt
       * The prompt must be written in {{.communicationLanguage}}
-      * Ultimately, output only the JSON adhering to the json-schema below
+      * Finally, output only the JSON adhering to the json-schema below
       </instructions>
 
       <template>
