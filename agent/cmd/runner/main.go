@@ -32,6 +32,11 @@ func main() {
 		panic(err)
 	}
 
+	promptPath, err := getPromptPath(conf)
+	if err != nil {
+		panic(err)
+	}
+
 	imageName := "agent-dev"
 	dockerEnvs := passEnvs()
 	containerName := "issue-agent"
@@ -40,15 +45,15 @@ func main() {
 		"--rm",
 		"--name", containerName,
 	}
+	// Mount files to the container
 	if len(configPath) > 0 {
 		args = append(args, "-v", configPath+":"+config.ConfigFilePath)
 	}
-	if len(conf.Agent.PromptPath) > 0 {
+	if len(promptPath) > 0 {
 		path, err := filepath.Abs(conf.Agent.PromptPath)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("prompt path:", path)
 		args = append(args, "-v", path+":"+config.PromptFilePath)
 	}
 	args = append(args, dockerEnvs...)
@@ -138,6 +143,13 @@ func getConfigPathOrDefault() (string, error) {
 	}
 
 	return path, nil
+}
+
+func getPromptPath(conf config.Config) (string, error) {
+	if len(conf.Agent.PromptPath) == 0 {
+		return "", nil
+	}
+	return filepath.Abs(conf.Agent.PromptPath)
 }
 
 // Pass only the environment variables that are required by the agent.

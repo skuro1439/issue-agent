@@ -6,7 +6,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github/clover0/github-issue-agent/config"
 	"github/clover0/github-issue-agent/config/template"
 )
 
@@ -16,10 +15,6 @@ type PromptTemplate struct {
 		SystemTemplate string `yaml:"system_prompt"`
 		UserTemplate   string `yaml:"user_prompt"`
 	}
-}
-
-func LoadPromptDefault() (PromptTemplate, error) {
-	return LoadPrompt(config.PromptFilePath)
 }
 
 func LoadPrompt(filePath string) (PromptTemplate, error) {

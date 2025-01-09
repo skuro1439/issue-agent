@@ -53,7 +53,7 @@ func IssueCommand(flags []string) error {
 			return err
 		}
 	} else {
-		lo.Info("load issue from GitHub")
+		lo.Info("load issue from GitHub\n")
 		issLoader = loader.NewGitHubLoader(gh, conf.Agent.GitHub.Owner, conf.Agent.GitHub.Repository)
 		if issue, err = issLoader.LoadIssue(ctx, cliIn.GithubIssueNumber); err != nil {
 			lo.Error("failed to load issue from GitHub: %s\n", err)
