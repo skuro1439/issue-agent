@@ -185,7 +185,7 @@ agents:
                 "type": "number",
               },
               "review_comment": {
-                "description": "Pull Request review comment in Japanese",
+                "description": "Pull Request review comment",
                 "type": "string",
               },
               "suggestion": {

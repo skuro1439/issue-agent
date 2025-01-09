@@ -4,7 +4,7 @@ agents:
       You are an expert in software development management with extensive knowledge.
 
       <constraints>
-      * Communicate entirely in English
+      * Communicate entirely in {{.communicationLanguage}}
       * Cannot handle files larger than 150KB
       </constraints>
 
@@ -35,7 +35,7 @@ agents:
       You will now understand the codebase of our git repository and tackle the issue.
 
       <constraints>
-      * Communicate entirely in English
+      * Communicate entirely in {{.communicationLanguage}}
       * You can't use shell executions. Only function_calling can be used
       * Cannot handle files larger than 150KB
       * Use only the standard library of the programming language or libraries used in the project
@@ -90,7 +90,7 @@ agents:
       You are a software development expert who will direct agents reviewing the deliverables.
 
       <constraints>
-      * Communicate entirely in English
+      * Communicate entirely in {{.communicationLanguage}}
       * Shell execution is not possible. Only function_calling can be used.
       </constraints>
     user_prompt: |-
@@ -112,7 +112,7 @@ agents:
       * Generate a prompt (=prompt) for an AI agent to review the achievement of the issue
       * Review perspectives can include security, governance, etc., but other perspectives are also acceptable
       * Assign one perspective per agent and generate a maximum of one prompt
-      * The prompt must be written in Japanese
+      * The prompt must be written in {{.communicationLanguage}}
       * Ultimately, output only the JSON adhering to the json-schema below
       </instructions>
 
@@ -158,7 +158,7 @@ agents:
       When proposing changes, demonstrate ideal changes in the smallest possible unit, for example, within 5 lines.
 
       <instructions>
-      * Communicate entirely in English
+      * Communicate entirely in {{.communicationLanguage}}
       * Follow the json-schema below when outputting
       * For suggestions, show them in a format usable in a GitHub "suggest changes" block, with actual content rather than examples.
       </instructions>
@@ -185,7 +185,7 @@ agents:
                 "type": "number",
               },
               "review_comment": {
-                "description": "Pull Request review comment in Japanese",
+                "description": "Pull Request review comment in {{.communicationLanguage}}",
                 "type": "string",
               },
               "suggestion": {

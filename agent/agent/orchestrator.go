@@ -70,7 +70,7 @@ func OrchestrateAgents(
 		Model:    conf.Agent.Model,
 	}
 
-	prompt, err := libprompt.BuildRequirementPrompt(promptTemplate, issue)
+	prompt, err := libprompt.BuildRequirementPrompt(promptTemplate, conf.CommunicationLanguage, issue)
 	if err != nil {
 		lo.Error("failed build requirement prompt: %s\n", err)
 		return err
@@ -82,7 +82,7 @@ func OrchestrateAgents(
 	}
 
 	instruction := requirementAgent.History()[len(requirementAgent.History())-1].RawContent
-	prompt, err = libprompt.BuildDeveloperPrompt(promptTemplate, loaderr, issue.Path, instruction)
+	prompt, err = libprompt.BuildDeveloperPrompt(promptTemplate, conf.CommunicationLanguage, loaderr, issue.Path, instruction)
 	if err != nil {
 		lo.Error("failed build developer prompt: %s\n", err)
 		return err
@@ -99,7 +99,7 @@ func OrchestrateAgents(
 	}
 	submittedPRNumber := dataStore.GetSubmission(store.LastSubmissionKey).PullRequestNumber
 
-	prompt, err = libprompt.BuildReviewManagerPrompt(promptTemplate, issue, util.Map(developerAgent.ChangedFiles(), func(f store.File) string { return f.Path }))
+	prompt, err = libprompt.BuildReviewManagerPrompt(promptTemplate, conf.CommunicationLanguage, issue, util.Map(developerAgent.ChangedFiles(), func(f store.File) string { return f.Path }))
 	if err != nil {
 		lo.Error("failed to build review manager prompt: %s\n", err)
 		return err
@@ -138,7 +138,7 @@ func OrchestrateAgents(
 
 	for _, p := range prompts {
 		lo.Info("Run %s\n", p.AgentName)
-		prpt, err := libprompt.BuildReviewerPrompt(promptTemplate, issue, submittedPRNumber, p.Prompt)
+		prpt, err := libprompt.BuildReviewerPrompt(promptTemplate, conf.CommunicationLanguage, submittedPRNumber, p.Prompt)
 		if err != nil {
 			lo.Error("failed to build reviewer prompt: %s\n", err)
 			return err
@@ -184,6 +184,7 @@ func OrchestrateAgents(
 			body := fmt.Sprintf("from %s\n", p.AgentName) +
 				r.ReviewComment
 			if r.Suggestion != "" {
+				// TODO: escape JSON in Suggestion string
 				body += "\n\n```suggestion\n" + r.Suggestion + "\n```\n"
 			}
 			comments = append(comments, &github.DraftReviewComment{

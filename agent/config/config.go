@@ -23,9 +23,10 @@ const (
 )
 
 type Config struct {
-	WorkDir  string `yaml:"workdir" validate:"required"`
-	LogLevel string `yaml:"log_level" validate:"log_level"`
-	Agent    struct {
+	CommunicationLanguage string `yaml:"communication_language"`
+	WorkDir               string `yaml:"workdir" validate:"required"`
+	LogLevel              string `yaml:"log_level" validate:"log_level"`
+	Agent                 struct {
 		PromptPath string `yaml:"prompt_path"`
 		Model      string `yaml:"model" validate:"required"`
 		MaxSteps   int    `yaml:"max_steps" validate:"gte=0"`
@@ -80,7 +81,11 @@ func Load(path string) (Config, error) {
 		return cnfg, err
 	}
 
-	return cnfg, ValidateConfig(cnfg)
+	if err := ValidateConfig(cnfg); err != nil {
+		return cnfg, err
+	}
+
+	return setDefaults(cnfg), nil
 }
 
 func ValidateConfig(config Config) error {
@@ -93,4 +98,12 @@ func ValidateConfig(config Config) error {
 		return fmt.Errorf("validation failed: %w\n", errs)
 	}
 	return nil
+}
+
+func setDefaults(conf Config) Config {
+	if conf.CommunicationLanguage == "" {
+		conf.CommunicationLanguage = "English"
+	}
+
+	return conf
 }
