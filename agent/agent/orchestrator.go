@@ -47,7 +47,7 @@ func OrchestrateAgents(
 	}
 
 	functions.InitializeFunctions(
-		conf.Agent.GitHub.NoSubmit,
+		*conf.Agent.GitHub.NoSubmit,
 		agithub.NewGitHubService(conf.Agent.GitHub.Owner, conf.Agent.GitHub.Repository, gh, lo),
 		conf.Agent.AllowFunctions,
 	)
@@ -91,6 +91,12 @@ func OrchestrateAgents(
 	if err != nil {
 		lo.Error("developer agent failed: %s\n", err)
 		return err
+	}
+
+	if *conf.Agent.SkipReviewAgents {
+		lo.Info("Skip review agents\n")
+		lo.Info("Agents finished successfully!\n")
+		return nil
 	}
 
 	if s := dataStore.GetSubmission(store.LastSubmissionKey); s == nil {

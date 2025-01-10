@@ -16,6 +16,7 @@ var defaultConfig []byte
 const (
 	ConfigFilePath = "/agent/config/config.yml"
 	PromptFilePath = "/agent/config/prompt.yml"
+	DefaultWorkDir = "/agent/repositories"
 
 	LogDebug = "debug"
 	LogInfo  = "info"
@@ -24,19 +25,20 @@ const (
 
 type Config struct {
 	CommunicationLanguage string `yaml:"communication_language"`
-	WorkDir               string `yaml:"workdir" validate:"required"`
+	WorkDir               string `yaml:"workdir"`
 	LogLevel              string `yaml:"log_level" validate:"log_level"`
 	Agent                 struct {
-		PromptPath string `yaml:"prompt_path"`
-		Model      string `yaml:"model" validate:"required"`
-		MaxSteps   int    `yaml:"max_steps" validate:"gte=0"`
-		Git        struct {
+		PromptPath       string `yaml:"prompt_path"`
+		Model            string `yaml:"model" validate:"required"`
+		MaxSteps         int    `yaml:"max_steps" validate:"gte=0"`
+		SkipReviewAgents *bool  `yaml:"skip_review_agents"`
+		Git              struct {
 			UserName  string `yaml:"user_name" validate:"required"`
 			UserEmail string `yaml:"user_email" validate:"required"`
 		} `yaml:"git"`
 		GitHub struct {
-			NoSubmit        bool   `yaml:"no_submit"`
-			CloneRepository bool   `yaml:"clone_repository"`
+			NoSubmit        *bool  `yaml:"no_submit"`
+			CloneRepository *bool  `yaml:"clone_repository"`
 			Owner           string `yaml:"owner" validate:"required"`
 			Repository      string `yaml:"repository" validate:"required"`
 		}
@@ -81,11 +83,13 @@ func Load(path string) (Config, error) {
 		return cnfg, err
 	}
 
+	cnfg = setDefaults(cnfg)
+
 	if err := ValidateConfig(cnfg); err != nil {
 		return cnfg, err
 	}
 
-	return setDefaults(cnfg), nil
+	return cnfg, nil
 }
 
 func ValidateConfig(config Config) error {
@@ -103,6 +107,25 @@ func ValidateConfig(config Config) error {
 func setDefaults(conf Config) Config {
 	if conf.CommunicationLanguage == "" {
 		conf.CommunicationLanguage = "English"
+	}
+
+	if conf.WorkDir == "" {
+		conf.WorkDir = DefaultWorkDir
+	}
+
+	if conf.Agent.GitHub.NoSubmit == nil {
+		noSubmit := false
+		conf.Agent.GitHub.NoSubmit = &noSubmit
+	}
+
+	if conf.Agent.GitHub.CloneRepository == nil {
+		clone := true
+		conf.Agent.GitHub.CloneRepository = &clone
+	}
+
+	if conf.Agent.SkipReviewAgents == nil {
+		skip := false
+		conf.Agent.SkipReviewAgents = &skip
 	}
 
 	return conf

@@ -3,10 +3,10 @@
 # Default is English
 communication_language: "English"
 
-# Required
+# Default is /tmp/repositories
 workdir: "/tmp/repositories"
 
-# Required
+# Default is info
 # debug, info, error
 log_level: "info"
 
@@ -17,6 +17,7 @@ agent:
   # e.g) config/prompt_template_en.yml
   prompt_path: ""
 
+  # Required
   # LLM model name
   model: "gpt-4o"
 
@@ -24,6 +25,11 @@ agent:
   # 1 step as LLM to user
   # 1 step as user execution function
   max_steps: 100
+
+
+  # Skip review agents
+  # Default is true
+  skip_review_agents: true
 
   git:
     # Required
@@ -47,10 +53,6 @@ agent:
     # Required
     # Repository name to operate
     repository: ""
-
-    # Required
-    # Base branch to operate. Pull Request will be created to this branch.
-    base_branch: "main"
 
   # Allow agent to use function.
   # Belows are the default functions.

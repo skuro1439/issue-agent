@@ -27,7 +27,7 @@ func IssueCommand(flags []string) error {
 
 	lo := logger.NewPrinter(conf.LogLevel)
 
-	if conf.Agent.GitHub.CloneRepository {
+	if *conf.Agent.GitHub.CloneRepository {
 		if err := agithub.CloneRepository(lo, conf); err != nil {
 			lo.Error("failed to clone repository")
 			return err
