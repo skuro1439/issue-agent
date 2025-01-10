@@ -68,21 +68,23 @@ func (a *Agent) Work() (lastOutput string, err error) {
 
 	a.currentStep = a.llmForwarder.ForwardStep(ctx, history)
 
-	var i int
+	var steps int
 	loop := true
 	for loop {
-		i++
-		if i > a.parameter.MaxSteps {
+		steps++
+		if steps > a.parameter.MaxSteps {
 			a.logg.Info("Reached to the max steps")
 			break
 		}
 
 		switch a.currentStep.Do {
 		case step.Exec:
+			a.logg.Info(logger.Blue("[STEP]execution functions:\n"))
 			var input []step.ReturnToLLMInput
 			for _, fnCtx := range a.currentStep.FunctionContexts {
 				var returningStr string
 				returningStr, err = functions.ExecFunction(
+					a.logg,
 					a.store,
 					fnCtx.Function.Name,
 					fnCtx.FunctionArgs.String(),
