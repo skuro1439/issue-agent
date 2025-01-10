@@ -7,7 +7,7 @@ build: $(TEMPDIR)
 	cd cmd/runner && go build -o ../../$(TEMPDIR)/build/agent
 
 .PHONY: test
-test:
+run/test:
 	go test ./... -v -parallel 4 -race
 
 dev/image:
