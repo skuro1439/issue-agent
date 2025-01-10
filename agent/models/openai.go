@@ -223,6 +223,7 @@ func (o OpenAI) CompletionNextStep(_ context.Context, history []LLMMessage) step
 func (o OpenAI) debugShowSendingMsg(param openai.ChatCompletionNewParams) {
 	if len(param.Messages.Value) > 0 {
 		o.logger.Info(logger.Green(fmt.Sprintf("model: %s, sending messages:\n", param.Model.String())))
+		// TODO: show all messages. But now, show only the last message
 		o.logger.Debug(fmt.Sprintf("%s\n", param.Messages.Value[len(param.Messages.Value)-1]))
 	}
 }
