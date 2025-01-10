@@ -16,5 +16,5 @@ services:
 volumes:
   agent-go-mod:
 networks:
- agent-net:
-   driver: bridge
+  agent-net:
+    driver: bridge
