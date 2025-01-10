@@ -8,7 +8,6 @@ import (
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 
-	"github/clover0/github-issue-agent/agent"
 	"github/clover0/github-issue-agent/logger"
 	"github/clover0/github-issue-agent/step"
 )
@@ -27,7 +26,7 @@ func NewOpenAI(logger logger.Logger, apiKey string) OpenAI {
 	}
 }
 
-func (o OpenAI) createCompletionParams(input agent.StartCompletionInput) (openai.ChatCompletionNewParams, []agent.LLMMessage) {
+func (o OpenAI) createCompletionParams(input StartCompletionInput) (openai.ChatCompletionNewParams, []LLMMessage) {
 	toolFuncs := make([]openai.ChatCompletionToolParam, len(input.Functions))
 	for i, f := range input.Functions {
 		toolFuncs[i] = openai.ChatCompletionToolParam{
@@ -36,13 +35,13 @@ func (o OpenAI) createCompletionParams(input agent.StartCompletionInput) (openai
 		}
 	}
 
-	historyInitial := []agent.LLMMessage{
+	historyInitial := []LLMMessage{
 		{
-			Role:       agent.LLMSystem,
+			Role:       LLMSystem,
 			RawContent: input.SystemPrompt,
 		},
 		{
-			Role:       agent.LLMUser,
+			Role:       LLMUser,
 			RawContent: input.StartUserPrompt,
 		},
 	}
@@ -58,20 +57,22 @@ func (o OpenAI) createCompletionParams(input agent.StartCompletionInput) (openai
 	}, historyInitial
 }
 
-func (o OpenAI) StartCompletion(ctx context.Context, input agent.StartCompletionInput) ([]agent.LLMMessage, error) {
-	var history []agent.LLMMessage
+func (o OpenAI) StartCompletion(ctx context.Context, input StartCompletionInput) ([]LLMMessage, error) {
+	var history []LLMMessage
 	params, historyInitial := o.createCompletionParams(input)
 	history = append(history, historyInitial...)
 
-	o.debugShowSendingMsg(params)
+	o.logger.Info(logger.Green(fmt.Sprintf("model: %s, sending message...\n", input.Model)))
+	o.logger.Debug("system prompt:\n%s\n", input.SystemPrompt)
+	o.logger.Debug("user prompt:\n%s\n", input.StartUserPrompt)
 	chat, err := o.client.Chat.Completions.New(ctx, params)
 	if err != nil {
 		return nil, err
 	}
 
 	msg := chat.Choices[0]
-	lastMsg := agent.LLMMessage{
-		Role:              agent.LLMAssistant,
+	lastMsg := LLMMessage{
+		Role:              LLMAssistant,
 		RawContent:        msg.Message.Content,
 		FinishReason:      convertToFinishReason(msg.FinishReason),
 		ReturnedToolCalls: convertToToolCalls(msg.Message.ToolCalls),
@@ -91,17 +92,17 @@ func (o OpenAI) StartCompletion(ctx context.Context, input agent.StartCompletion
 
 func (o OpenAI) ContinueCompletion(
 	ctx context.Context,
-	input agent.StartCompletionInput,
+	input StartCompletionInput,
 	llmContexts []step.ReturnToLLMContext,
-	history []agent.LLMMessage,
-) ([]agent.LLMMessage, error) {
+	history []LLMMessage,
+) ([]LLMMessage, error) {
 	params, _ := o.createCompletionParams(input)
 
 	// build from history
 	params.Messages.Value = []openai.ChatCompletionMessageParamUnion{}
 	for _, h := range history {
 		switch h.Role {
-		case agent.LLMAssistant:
+		case LLMAssistant:
 			if h.RawMessageStruct == nil {
 				return nil, errors.New("rawMessageStruct should not be nil. But it is nil")
 			}
@@ -112,11 +113,11 @@ func (o OpenAI) ContinueCompletion(
 			}
 
 			params.Messages.Value = append(params.Messages.Value, m)
-		case agent.LLMUser:
+		case LLMUser:
 			params.Messages.Value = append(params.Messages.Value, openai.UserMessage(h.RawContent))
-		case agent.LLMSystem:
+		case LLMSystem:
 			params.Messages.Value = append(params.Messages.Value, openai.SystemMessage(h.RawContent))
-		case agent.LLMTool:
+		case LLMTool:
 			params.Messages.Value = append(params.Messages.Value,
 				openai.ToolMessage(h.RespondToolCall.ToolCallerID, h.RawContent),
 			)
@@ -124,15 +125,15 @@ func (o OpenAI) ContinueCompletion(
 	}
 
 	// new message
-	var newMsg agent.LLMMessage
+	var newMsg LLMMessage
 	for _, v := range llmContexts {
 		if v.ToolCallerID != "" {
 			// tool message
 			params.Messages.Value = append(params.Messages.Value, openai.ToolMessage(v.ToolCallerID, v.Content))
-			newMsg = agent.LLMMessage{
-				Role:       agent.LLMTool,
+			newMsg = LLMMessage{
+				Role:       LLMTool,
 				RawContent: v.Content,
-				RespondToolCall: agent.ToolCall{
+				RespondToolCall: ToolCall{
 					ToolCallerID: v.ToolCallerID,
 					ToolName:     v.ToolName,
 				},
@@ -140,8 +141,8 @@ func (o OpenAI) ContinueCompletion(
 		} else {
 			// user message
 			params.Messages.Value = append(params.Messages.Value, openai.UserMessage(v.Content))
-			newMsg = agent.LLMMessage{
-				Role:       agent.LLMUser,
+			newMsg = LLMMessage{
+				Role:       LLMUser,
 				RawContent: v.Content,
 			}
 		}
@@ -155,8 +156,8 @@ func (o OpenAI) ContinueCompletion(
 	}
 
 	msg := chat.Choices[0]
-	lastMsg := agent.LLMMessage{
-		Role:              agent.LLMAssistant,
+	lastMsg := LLMMessage{
+		Role:              LLMAssistant,
 		RawContent:        msg.Message.Content,
 		FinishReason:      convertToFinishReason(msg.FinishReason),
 		ReturnedToolCalls: convertToToolCalls(msg.Message.ToolCalls),
@@ -170,23 +171,23 @@ func (o OpenAI) ContinueCompletion(
 	return history, nil
 }
 
-func convertToFinishReason(finishReason openai.ChatCompletionChoicesFinishReason) agent.MessageFinishReason {
+func convertToFinishReason(finishReason openai.ChatCompletionChoicesFinishReason) MessageFinishReason {
 	switch finishReason {
 	case openai.ChatCompletionChoicesFinishReasonLength:
-		return agent.FinishLengthOver
+		return FinishLengthOver
 	case openai.ChatCompletionChoicesFinishReasonStop:
-		return agent.FinishStop
+		return FinishStop
 	case openai.ChatCompletionChoicesFinishReasonToolCalls:
-		return agent.FinishToolCalls
+		return FinishToolCalls
 	default:
 		panic(fmt.Sprintf("convertToFinishReason: unknown finish reason: %s", finishReason))
 	}
 }
 
-func convertToToolCalls(toolCalls []openai.ChatCompletionMessageToolCall) []agent.ToolCall {
-	var res []agent.ToolCall
+func convertToToolCalls(toolCalls []openai.ChatCompletionMessageToolCall) []ToolCall {
+	var res []ToolCall
 	for _, v := range toolCalls {
-		res = append(res, agent.ToolCall{
+		res = append(res, ToolCall{
 			ToolCallerID: v.ID,
 			ToolName:     v.Function.Name,
 			Argument:     v.Function.Arguments,
@@ -195,14 +196,14 @@ func convertToToolCalls(toolCalls []openai.ChatCompletionMessageToolCall) []agen
 	return res
 }
 
-func (o OpenAI) CompletionNextStep(_ context.Context, history []agent.LLMMessage) step.Step {
+func (o OpenAI) CompletionNextStep(_ context.Context, history []LLMMessage) step.Step {
 	// last message
 	lastMsg := history[len(history)-1]
 
 	switch lastMsg.FinishReason {
-	case agent.FinishStop:
+	case FinishStop:
 		return step.NewWaitingInstructionStep(lastMsg.RawContent)
-	case agent.FinishToolCalls:
+	case FinishToolCalls:
 		var input []step.FunctionsInput
 		for _, v := range lastMsg.ReturnedToolCalls {
 			input = append(input, step.FunctionsInput{
@@ -212,7 +213,7 @@ func (o OpenAI) CompletionNextStep(_ context.Context, history []agent.LLMMessage
 			})
 		}
 		return step.NewExecStep(input)
-	case agent.FinishLengthOver:
+	case FinishLengthOver:
 		return step.NewUnrecoverableStep(fmt.Errorf("chat completion length error"))
 	}
 
@@ -222,11 +223,12 @@ func (o OpenAI) CompletionNextStep(_ context.Context, history []agent.LLMMessage
 func (o OpenAI) debugShowSendingMsg(param openai.ChatCompletionNewParams) {
 	if len(param.Messages.Value) > 0 {
 		o.logger.Info(logger.Green(fmt.Sprintf("model: %s, sending messages:\n", param.Model.String())))
+		// TODO: show all messages. But now, show only the last message
 		o.logger.Debug(fmt.Sprintf("%s\n", param.Messages.Value[len(param.Messages.Value)-1]))
 	}
 }
 
-func (o OpenAI) debugShowChoice(history []agent.LLMMessage) {
+func (o OpenAI) debugShowChoice(history []LLMMessage) {
 	last := history[len(history)-1]
 	o.logger.Debug(fmt.Sprintf("finish_reason: %s, role: %s, message.content: %s\n",
 		last.FinishReason, last.Role, last.RawContent,

@@ -6,6 +6,7 @@ import (
 
 	"github/clover0/github-issue-agent/functions"
 	"github/clover0/github-issue-agent/logger"
+	"github/clover0/github-issue-agent/models"
 	"github/clover0/github-issue-agent/prompt"
 	"github/clover0/github-issue-agent/step"
 	"github/clover0/github-issue-agent/store"
@@ -21,9 +22,9 @@ type Agent struct {
 	currentStep         step.Step
 	logg                logger.Logger
 	submitServiceCaller functions.SubmitFilesCallerType
-	llmForwarder        LLMForwarder
+	llmForwarder        models.LLMForwarder
 	prompt              prompt.Prompt
-	history             []LLMMessage
+	history             []models.LLMMessage
 	store               *store.Store
 }
 
@@ -33,7 +34,7 @@ func NewAgent(
 	logg logger.Logger,
 	submitServiceCaller functions.SubmitFilesCallerType,
 	prompt prompt.Prompt,
-	forwarder LLMForwarder,
+	forwarder models.LLMForwarder,
 	store *store.Store,
 ) Agent {
 	return Agent{
@@ -52,13 +53,14 @@ func (a *Agent) Work() (lastOutput string, err error) {
 	ctx := context.Background()
 	a.logg.Info("[%s]start agent work\n", a.name)
 
-	completionInput := StartCompletionInput{
+	completionInput := models.StartCompletionInput{
 		Model:           a.parameter.Model,
 		SystemPrompt:    a.prompt.SystemPrompt,
 		StartUserPrompt: a.prompt.StartUserPrompt,
 		Functions:       functions.AllFunctions(),
 	}
 
+	a.logg.Info(logger.Green(fmt.Sprintf("[STEP]start commnuication with LLM\n")))
 	history, err := a.llmForwarder.StartForward(completionInput)
 	if err != nil {
 		return lastOutput, fmt.Errorf("start llm forward error: %w", err)
@@ -67,21 +69,23 @@ func (a *Agent) Work() (lastOutput string, err error) {
 
 	a.currentStep = a.llmForwarder.ForwardStep(ctx, history)
 
-	var i int
+	var steps = 1
 	loop := true
 	for loop {
-		i++
-		if i > a.parameter.MaxSteps {
-			a.logg.Info("Reached to the max steps")
+		steps++
+		if steps > a.parameter.MaxSteps {
+			a.logg.Info("Reached to the max steps\n")
 			break
 		}
 
 		switch a.currentStep.Do {
 		case step.Exec:
+			a.logg.Info(logger.Blue("[STEP]execution functions:\n"))
 			var input []step.ReturnToLLMInput
 			for _, fnCtx := range a.currentStep.FunctionContexts {
 				var returningStr string
 				returningStr, err = functions.ExecFunction(
+					a.logg,
 					a.store,
 					fnCtx.Function.Name,
 					fnCtx.FunctionArgs.String(),
@@ -102,6 +106,7 @@ func (a *Agent) Work() (lastOutput string, err error) {
 			a.currentStep = step.NewReturnToLLMStep(input)
 
 		case step.ReturnToLLM:
+			a.logg.Info(logger.Green(fmt.Sprintf("[STEP]forwarding message to LLM and waiting for response\n")))
 			history, err = a.llmForwarder.ForwardLLM(ctx, completionInput, a.currentStep.ReturnToLLMContexts, history)
 			if err != nil {
 				a.logg.Error("unrecoverable ContinueCompletion: %s\n", err)
@@ -111,27 +116,27 @@ func (a *Agent) Work() (lastOutput string, err error) {
 			a.currentStep = a.llmForwarder.ForwardStep(ctx, history)
 
 		case step.WaitingInstruction:
-			a.logg.Debug("finish instruction\n")
+			a.logg.Info("[STEP]finish instructions\n")
 			lastOutput = a.currentStep.LastOutput
 			loop = false
 			break
 
 		case step.Unrecoverable, step.Unknown:
 			a.logg.Error("unrecoverable error: %s\n", a.currentStep.UnrecoverableErr)
-			return lastOutput, err
+			return lastOutput, fmt.Errorf("unrecoverable error: %s", a.currentStep.UnrecoverableErr)
 		default:
 			a.logg.Error("does not exist step type\n")
-			return lastOutput, err
+			return lastOutput, fmt.Errorf("does not exist step type")
 		}
 	}
 	return lastOutput, nil
 }
 
-func (a *Agent) updateHistory(history []LLMMessage) {
+func (a *Agent) updateHistory(history []models.LLMMessage) {
 	a.history = history
 }
 
-func (a *Agent) History() []LLMMessage {
+func (a *Agent) History() []models.LLMMessage {
 	return a.history
 }
 

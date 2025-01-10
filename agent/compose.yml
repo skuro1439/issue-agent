@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: development
     volumes:
       - ./:/usr/local/agent
       - agent-go-mod:/go/pkg/mod
@@ -15,5 +16,5 @@ services:
 volumes:
   agent-go-mod:
 networks:
- agent-net:
-   driver: bridge
+  agent-net:
+    driver: bridge

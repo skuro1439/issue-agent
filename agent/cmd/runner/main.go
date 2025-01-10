@@ -1,337 +1,175 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
+	"os/signal"
+	"path/filepath"
+	"slices"
 	"strings"
+	"syscall"
 
-	"github.com/google/go-github/v66/github"
-
-	"github/clover0/github-issue-agent/agent"
-	"github/clover0/github-issue-agent/config/cli"
-	"github/clover0/github-issue-agent/functions"
-	"github/clover0/github-issue-agent/functions/agithub"
-	"github/clover0/github-issue-agent/loader"
-	"github/clover0/github-issue-agent/logger"
-	"github/clover0/github-issue-agent/models"
-	libprompt "github/clover0/github-issue-agent/prompt"
-	"github/clover0/github-issue-agent/store"
-	"github/clover0/github-issue-agent/util"
+	"github/clover0/github-issue-agent/cli"
+	"github/clover0/github-issue-agent/config"
 )
 
-func newGitHub() *github.Client {
-	token, ok := os.LookupEnv("GITHUB_TOKEN")
-	if !ok {
-		panic("GITHUB_TOKEN is not set")
-	}
-	return github.NewClient(nil).WithAuthToken(token)
-}
+const defaultConfigPath = "./issue_agent.yml"
 
+// Use the docker command to start a container and execute the agent binary
 func main() {
-	//lo := logger.NewDefaultLogger()
-	lo := logger.NewPrinter()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	cliIn, err := cli.ParseIssueInput()
+	configPath, err := getConfigPathOrDefault()
 	if err != nil {
-		lo.Error("failed to parse input: %s", err)
-		os.Exit(1)
+		panic(err)
 	}
 
-	if err := agithub.CloneRepository(lo, cliIn); err != nil {
-		lo.Error("failed to clone repository")
-		os.Exit(1)
-	}
-
-	// TODO: no dependency with changing directory
-	if err := os.Chdir(cliIn.AgentWorkDir); err != nil {
-		lo.Error("failed to change directory: %s", err)
-		os.Exit(1)
-	}
-
-	llmForwarder := models.SelectForwarder(lo, cliIn.Model)
-
-	promptTemplate, err := libprompt.LoadPromptTemplateFromYAML(cliIn.Template)
+	conf, err := config.Load(configPath)
 	if err != nil {
-		lo.Error("failed to load prompt template: %s", err)
-		os.Exit(1)
+		panic(err)
 	}
 
-	ctx := context.Background()
-
-	gh := newGitHub()
-
-	functions.InitializeFunctions(
-		cliIn.NoSubmit,
-		agithub.NewGitHubService(cliIn.RepositoryOwner, cliIn.Repository, gh, lo),
-	)
-
-	var issLoader loader.Loader
-	var issue loader.Issue
-	if len(cliIn.FromFile) > 0 {
-		lo.Info("load issue from file")
-		issLoader = loader.NewFileLoader()
-		if issue, err = issLoader.LoadIssue(ctx, cliIn.FromFile); err != nil {
-			lo.Error("failed to load issue from file: %s", err)
-			os.Exit(1)
-		}
-	} else {
-		lo.Info("load issue from GitHub")
-		issLoader = loader.NewGitHubLoader(gh, cliIn.RepositoryOwner, cliIn.Repository)
-		if issue, err = issLoader.LoadIssue(ctx, cliIn.GithubIssueNumber); err != nil {
-			lo.Error("failed to load issue from GitHub: %s", err)
-			os.Exit(1)
-		}
-	}
-
-	submitServiceCaller := agithub.NewSubmitFileGitHubService(cliIn.RepositoryOwner, cliIn.Repository, gh, lo).
-		Caller(ctx, functions.SubmitFilesServiceInput{
-			BaseBranch: cliIn.BaseBranch,
-			GitEmail:   cliIn.GitEmail,
-			GitName:    cliIn.GitName,
-		})
-
-	dataStore := store.NewStore()
-
-	parameter := agent.Parameter{
-		MaxSteps: cliIn.MaxSteps,
-		Model:    cliIn.Model,
-	}
-
-	prompt, err := libprompt.BuildRequirementPrompt(promptTemplate, issue)
+	promptPath, err := getPromptPath(conf)
 	if err != nil {
-		lo.Error("failed build requirement prompt: %s", err)
-		os.Exit(1)
-	}
-	requirementAgent := RunRequirementAgent(prompt, submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
-
-	instruction := requirementAgent.History()[len(requirementAgent.History())-1].RawContent
-	prompt, err = libprompt.BuildDeveloperPrompt(promptTemplate, issLoader, issue.Path, instruction)
-	if err != nil {
-		lo.Error("failed build developer prompt: %s", err)
-		os.Exit(1)
-	}
-	developer2Agent := RunDeveloperAgent(prompt, submitServiceCaller, parameter, lo, &dataStore, llmForwarder)
-
-	if s := dataStore.GetSubmission(store.LastSubmissionKey); s == nil {
-		lo.Error("submission is not found")
-		os.Exit(1)
-	}
-	submittedPRNumber := dataStore.GetSubmission(store.LastSubmissionKey).PullRequestNumber
-
-	prompt, err = libprompt.BuildReviewManagerPrompt(promptTemplate, issue, util.Map(developer2Agent.ChangedFiles(), func(f store.File) string { return f.Path }))
-	if err != nil {
-		lo.Error("failed to build review manager prompt: %s", err)
-		os.Exit(1)
-	}
-	reviewManager := ReviewManagerAgent(
-		prompt,
-		parameter,
-		developer2Agent.ChangedFiles(),
-		submitServiceCaller,
-		lo, &dataStore, llmForwarder)
-	output := reviewManager.History()[len(reviewManager.History())-1].RawContent
-	lo.Info("ReviewManagerAgent output: %s", output)
-	type agentPrompt struct {
-		AgentName string `json:"agent_name"`
-		Prompt    string `json:"prompt"`
+		panic(err)
 	}
 
-	// TODO: refactor
-	// parse json output for revwier agents
-	// expected output:
-	//   text text text...
-	//   [{"agent_name": "agent1", "prompt": "prompt1"}, ...]
-	//   test...
-	var prompts []agentPrompt
-	jsonStart := strings.Index(output, "[")   // find JSON start
-	jsonEnd := strings.LastIndex(output, "]") // find JSON end
-	outBuff := bytes.NewBufferString(output[jsonStart : jsonEnd+1])
-	if err := json.Unmarshal(outBuff.Bytes(), &prompts); err != nil {
-		lo.Error("failed to unmarshal output: %s", err)
-		os.Exit(1)
+	imageName := "agent-dev"
+	dockerEnvs := passEnvs()
+	containerName := "issue-agent"
+	args := []string{
+		"run",
+		"--rm",
+		"--name", containerName,
 	}
-
-	for _, p := range prompts {
-		lo.Info("Run %s\n", p.AgentName)
-		prpt, err := libprompt.BuildReviewerPrompt(promptTemplate, issue, submittedPRNumber, p.Prompt)
+	// Mount files to the container
+	if len(configPath) > 0 {
+		args = append(args, "-v", configPath+":"+config.ConfigFilePath)
+	}
+	if len(promptPath) > 0 {
+		path, err := filepath.Abs(conf.Agent.PromptPath)
 		if err != nil {
-			lo.Error("failed to build reviewer prompt: %s", err)
-			os.Exit(1)
+			panic(err)
 		}
-
-		reviewer := RunReviewAgent(
-			p.AgentName,
-			prpt,
-			parameter, submitServiceCaller, lo, &dataStore, llmForwarder)
-		output := reviewer.History()[len(reviewer.History())-1].RawContent
-
-		// parse JSON output
-		// TODO: validate
-		var reviews []struct {
-			ReviewFilePath  string `json:"review_file_path"`
-			ReviewStartLine int    `json:"review_start_line"`
-			ReviewEndLine   int    `json:"review_end_line"`
-			ReviewComment   string `json:"review_comment"`
-			Suggestion      string `json:"suggestion"`
+		args = append(args, "-v", path+":"+config.PromptFilePath)
+	}
+	args = append(args, dockerEnvs...)
+	args = append(args, imageName)
+	args = append(args, "agent") // agent binary is built by agent/main.go
+	args = append(args, os.Args[1:]...)
+	for _, a := range os.Args[1:] {
+		if strings.HasSuffix(a, "-config") {
+			break
 		}
-		jsonStart := strings.Index(output, "[")   // find JSON start
-		jsonEnd := strings.LastIndex(output, "]") // find JSON end
-		outBuff := bytes.NewBufferString(output[jsonStart : jsonEnd+1])
-		if err := json.Unmarshal(outBuff.Bytes(), &reviews); err != nil {
-			lo.Error("failed to unmarshal output: %s", err)
-			os.Exit(1)
-		}
-
-		// TODO: move to agithub package
-		var comments []*github.DraftReviewComment
-		for _, r := range reviews {
-			startLine := github.Int(r.ReviewStartLine)
-			if *startLine == 0 {
-				*startLine = 1
-			}
-			if r.ReviewStartLine == r.ReviewEndLine {
-				startLine = nil
-			}
-			body := fmt.Sprintf("from %s\n", p.AgentName) +
-				r.ReviewComment
-			if r.Suggestion != "" {
-				body += "\n\n```suggestion\n" + r.Suggestion + "\n```\n"
-			}
-			comments = append(comments, &github.DraftReviewComment{
-				Path:      github.String(r.ReviewFilePath),
-				Body:      github.String(body),
-				StartLine: startLine,
-				Line:      github.Int(r.ReviewEndLine),
-				Side:      github.String("RIGHT"),
-			})
-		}
-
-		if _, _, err := gh.PullRequests.CreateReview(context.Background(),
-			cliIn.RepositoryOwner,
-			cliIn.Repository,
-			submittedPRNumber,
-			&github.PullRequestReviewRequest{
-				Event:    github.String("COMMENT"),
-				Comments: comments,
-			},
-		); err != nil {
-			lo.Error("failed to create pull request review: %s. but agent continue to work\n", err)
-		}
-		lo.Info("Finish %s\n", p.AgentName)
+		args = append(args, "-config", configPath)
 	}
 
-	lo.Info("Agents finished successfully!")
+	cmd := exec.CommandContext(ctx, dockerCmd(), args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Start(); err != nil {
+		fmt.Println("Error running container:", err)
+		panic(err)
+	}
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(sigChan)
+
+	go func(containerName string) {
+		sig := <-sigChan
+		fmt.Println("Received signal")
+		if err := cmd.Process.Signal(sig); err != nil {
+			fmt.Println("Error sending signal to container:", err)
+		}
+		stopContainer(containerName)
+		cancel()
+	}(containerName)
+
+	if err := cmd.Wait(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() != 0 {
+			fmt.Printf("Process exited with error: %v\n", err)
+		}
+	}
 }
 
-func RunRequirementAgent(
-	prompt libprompt.Prompt,
-	submitServiceCaller functions.SubmitFilesCallerType,
-	parameter agent.Parameter,
-	lo logger.Logger,
-	dataStore *store.Store,
-	llmForwarder agent.LLMForwarder,
-) agent.Agent {
-	ag := agent.NewAgent(
-		parameter,
-		"requirementAgent",
-		lo,
-		submitServiceCaller,
-		prompt,
-		llmForwarder,
-		dataStore,
-	)
-
-	if _, err := ag.Work(); err != nil {
-		lo.Error("requirement agent failed: %s", err)
-		os.Exit(1)
+func dockerCmd() string {
+	com, ok := os.LookupEnv("_DOCKER_CMD")
+	if ok {
+		return com
 	}
 
-	return ag
+	return "docker"
 }
 
-func RunDeveloperAgent(
-	prompt libprompt.Prompt,
-	submitServiceCaller functions.SubmitFilesCallerType,
-	parameter agent.Parameter,
-	lo logger.Logger,
-	dataStore *store.Store,
-	llmForwarder agent.LLMForwarder,
-) agent.Agent {
-	ag := agent.NewAgent(
-		parameter,
-		"developerAgent",
-		lo,
-		submitServiceCaller,
-		prompt,
-		llmForwarder,
-		dataStore,
-	)
-
-	if _, err := ag.Work(); err != nil {
-		lo.Error("ag failed: %s", err)
-		os.Exit(1)
-	}
-
-	return ag
+func stopContainer(containerName string) {
+	cmd := exec.Command(dockerCmd(), "kill", containerName)
+	bytes, _ := cmd.CombinedOutput()
+	fmt.Println(string(bytes))
 }
 
-func ReviewManagerAgent(
-	prompt libprompt.Prompt,
-	parameter agent.Parameter,
-	changedFiles []store.File,
-	submitServiceCaller functions.SubmitFilesCallerType,
-	lo logger.Logger,
-	dataStore *store.Store,
-	llmForwarder agent.LLMForwarder,
-) agent.Agent {
-	var changedFilePath []string
-	for _, f := range changedFiles {
-		changedFilePath = append(changedFilePath, f.Path)
-	}
-	ag := agent.NewAgent(
-		parameter,
-		"reviewManagerAgent",
-		lo,
-		submitServiceCaller,
-		prompt,
-		llmForwarder,
-		dataStore,
-	)
-
-	if _, err := ag.Work(); err != nil {
-		lo.Error("reviewManagerAgent failed: %s", err)
-		os.Exit(1)
+func getConfigPathOrDefault() (string, error) {
+	configStart := len(os.Args)
+	foundConfig := false
+	for i, arg := range os.Args {
+		if strings.HasSuffix(arg, "-config") {
+			configStart = i
+			foundConfig = true
+			break
+		}
 	}
 
-	return ag
+	// when -config option not found
+	// default config file or empty
+	if !foundConfig {
+		if _, err := os.Stat(defaultConfigPath); err != nil {
+			return "", nil
+		}
+		return filepath.Abs(defaultConfigPath)
+	}
+
+	if len(os.Args) <= configStart+1 {
+		return "", fmt.Errorf("-config option value is required")
+	}
+
+	path := os.Args[configStart+1]
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+
+	return path, nil
 }
 
-func RunReviewAgent(
-	name string,
-	prompt libprompt.Prompt,
-	parameter agent.Parameter,
-	submitServiceCaller functions.SubmitFilesCallerType, // TODO
-	lo logger.Logger,
-	dataStore *store.Store,
-	llmForwarder agent.LLMForwarder,
-) agent.Agent {
-	ag := agent.NewAgent(
-		parameter,
-		name,
-		lo,
-		submitServiceCaller,
-		prompt,
-		llmForwarder,
-		dataStore,
-	)
+func getPromptPath(conf config.Config) (string, error) {
+	if len(conf.Agent.PromptPath) == 0 {
+		return "", nil
+	}
+	return filepath.Abs(conf.Agent.PromptPath)
+}
 
-	if _, err := ag.Work(); err != nil {
-		lo.Error("%s failed: %s", name, err)
-		os.Exit(1)
+// Pass only the environment variables that are required by the agent.
+// This is to avoid passing sensitive information to the container.
+func passEnvs() []string {
+	var passEnvs []string
+	for _, env := range os.Environ() {
+		envName := strings.Split(env, "=")[0]
+		if slices.Contains(cli.EnvNames(), envName) {
+			passEnvs = append(passEnvs, env)
+		}
 	}
 
-	return ag
+	var dockerEnvs []string
+	for _, env := range passEnvs {
+		varName := strings.Split(env, "=")
+		if len(varName) == 2 {
+			dockerEnvs = append(dockerEnvs, "-e", env)
+		}
+	}
+
+	return dockerEnvs
 }

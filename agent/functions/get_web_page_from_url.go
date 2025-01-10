@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -17,7 +16,6 @@ func InitFuncGetWebPageFromURLFunction() Function {
 		Name:        FuncGetWebPageFromURL,
 		Description: "Get the web page from the URL",
 		Func:        GetWebPageFromURL,
-		FuncType:    reflect.TypeOf(GetWebPageFromURL),
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

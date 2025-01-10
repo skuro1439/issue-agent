@@ -2,9 +2,9 @@ package template
 
 import _ "embed"
 
-//go:embed default_prompt_ja.yaml
-var defaultJAPrompt []byte
+//go:embed prompt_en.yml
+var defaultENPrompt []byte
 
 func DefaultTemplate() []byte {
-	return defaultJAPrompt
+	return defaultENPrompt
 }

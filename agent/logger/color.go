@@ -37,3 +37,10 @@ func Yellow(str string) string {
 	}
 	return yellow.String() + str + reset.String()
 }
+
+func Blue(str string) string {
+	if noColor {
+		return str
+	}
+	return blue.String() + str + reset.String()
+}

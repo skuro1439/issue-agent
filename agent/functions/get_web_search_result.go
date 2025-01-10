@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -20,8 +19,7 @@ func InitGetWebSearchResult() Function {
 		Name: FuncGetWebSearchResult,
 		Description: `Get a list of results from an Internet search conducted with keywords.
 You should get the page information from the url of the result next.`,
-		Func:     GetWebSearchResult,
-		FuncType: reflect.TypeOf(GetWebSearchResult),
+		Func: GetWebSearchResult,
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

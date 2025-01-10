@@ -1,0 +1,67 @@
+# Communication language
+# English, Japanese...
+# Default is English
+communication_language: "English"
+
+# Default is /tmp/repositories
+workdir: "/tmp/repositories"
+
+# Default is info
+# debug, info, error
+log_level: "info"
+
+agent:
+  # Default prompt template is embed config.
+  # prompt_path is a relative path from the execution directory.
+  # e.g) config/prompt_template_en.yml
+  prompt_path: ""
+
+  # Required
+  # LLM model name
+  model: "gpt-4o"
+
+  # Maximum steps to run agent
+  # The following are defined as 1 step
+  # - user to LLM and returned to user from LLM
+  # - execution function
+  max_steps: 70
+
+  # Skip review agents
+  # Default is true
+  skip_review_agents: true
+
+  git:
+    # Required
+    user_name: ""
+
+    # Required
+    user_email: ""
+
+  # GitHub environment for agent
+  github:
+    # Don't submit files to GitHub by Pull Request.
+    no_submit: false
+
+    # Whether to clone repository to the workdir
+    clone_repository: true
+
+    # Required
+    # Repositories owner to operate
+    owner: ""
+
+    # Required
+    # Repository name to operate
+    repository: ""
+
+  # Allow agent to use function.
+  # Belows are the default functions.
+  allow_functions:
+    - get_pull_request_diff
+    - get_web_page_from_url
+    - get_web_search_result
+    - list_files
+    - modify_file
+    - open_file
+    - put_file
+    - submit_files
+    - search_files

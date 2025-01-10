@@ -4,27 +4,52 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/openai/openai-go"
+
+	"github/clover0/github-issue-agent/logger"
 	libstore "github/clover0/github-issue-agent/store"
 )
 
 func InitializeFunctions(
 	noSubmit bool,
 	repoService RepositoryService,
+	allowFunctions []string,
 ) {
-	InitOpenFileFunction()
-	InitListFilesFunction()
-	InitPutFileFunction()
-	InitModifyFileFunction()
-	if !noSubmit {
+	if allowFunction(allowFunctions, FuncOpenFile) {
+		InitOpenFileFunction()
+	}
+	if allowFunction(allowFunctions, FuncListFiles) {
+		InitListFilesFunction()
+	}
+	if allowFunction(allowFunctions, FuncPutFile) {
+		InitPutFileFunction()
+	}
+	if allowFunction(allowFunctions, FuncModifyFile) {
+		InitModifyFileFunction()
+	}
+	// TODO:
+	if !noSubmit && allowFunction(allowFunctions, FuncSubmitFiles) {
 		InitSubmitFilesGitHubFunction()
 	}
-	InitGetWebSearchResult()
-	InitFuncGetWebPageFromURLFunction()
-	InitGetPullRequestFunction(repoService)
+	if allowFunction(allowFunctions, FuncGetWebSearchResult) {
+		InitGetWebSearchResult()
+	}
+	if allowFunction(allowFunctions, FuncGetWebPageFromURL) {
+		InitFuncGetWebPageFromURLFunction()
+	}
+	if allowFunction(allowFunctions, FuncGetPullRequestDiff) {
+		InitGetPullRequestFunction(repoService)
+	}
+	if allowFunction(allowFunctions, FuncSearchFiles) {
+		InitSearchFilesFunction()
+	}
+}
+
+func allowFunction(allowFunctions []string, name string) bool {
+	return slices.Contains(allowFunctions, name)
 }
 
 type FuncName string
@@ -37,7 +62,6 @@ type Function struct {
 	Name        FuncName
 	Description string
 	Func        any
-	FuncType    reflect.Type
 	Parameters  map[string]interface{}
 }
 
@@ -61,7 +85,7 @@ func FunctionByName(name string) (Function, error) {
 }
 
 // AllFunctions returns all functions
-// WARNING: Called initialization functions before calling this function
+// WARNING: Call InitializeFunctions before calling this function
 func AllFunctions() []Function {
 	var fns []Function
 	for _, f := range functionsMap {
@@ -88,15 +112,14 @@ func SetSubmitFiles(fn SubmitFilesCallerType) FunctionOption {
 	}
 }
 
-func ExecFunction(store *libstore.Store, funcName FuncName, argsJson string, optArg ...FunctionOption) (string, error) {
+func ExecFunction(l logger.Logger, store *libstore.Store, funcName FuncName, argsJson string, optArg ...FunctionOption) (string, error) {
 	option := &optionalArg{}
 	for _, o := range optArg {
 		o(option)
 	}
 	switch funcName {
 	case FuncOpenFile:
-		// TODO: logger from context
-		fmt.Println("functions: do open_file")
+		l.Info("functions: do %s\n", FuncOpenFile)
 		input := OpenFileInput{}
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)
@@ -108,7 +131,7 @@ func ExecFunction(store *libstore.Store, funcName FuncName, argsJson string, opt
 		return file.Content, nil
 
 	case FuncListFiles:
-		fmt.Println("functions: do list_files")
+		l.Info("functions: do %s\n", FuncListFiles)
 		input := ListFilesInput{}
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)
@@ -120,7 +143,7 @@ func ExecFunction(store *libstore.Store, funcName FuncName, argsJson string, opt
 		return strings.Join(files, "\n"), nil
 
 	case FuncPutFile:
-		fmt.Println("functions: do put_file")
+		l.Info("functions: do %s\n", FuncPutFile)
 		input := PutFileInput{}
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)
@@ -133,7 +156,7 @@ func ExecFunction(store *libstore.Store, funcName FuncName, argsJson string, opt
 		return defaultSuccessReturning, nil
 
 	case FuncModifyFile:
-		fmt.Println("functions: do modify_file")
+		l.Info("functions: do %s\n", FuncModifyFile)
 		input := ModifyFileInput{}
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)
@@ -146,7 +169,7 @@ func ExecFunction(store *libstore.Store, funcName FuncName, argsJson string, opt
 		return defaultSuccessReturning, nil
 
 	case FuncSubmitFiles:
-		fmt.Println("functions: do submit changes")
+		l.Info("functions: do %s\n", FuncSubmitFiles)
 		input := SubmitFilesInput{}
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)
@@ -162,7 +185,7 @@ func ExecFunction(store *libstore.Store, funcName FuncName, argsJson string, opt
 		return defaultSuccessReturning, nil
 
 	case FuncGetWebSearchResult:
-		fmt.Println("functions: do get_latest_version_search_result")
+		l.Info("functions: do %s\n", FuncGetWebSearchResult)
 		input := GetWebSearchResultInput{}
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)
@@ -175,7 +198,7 @@ func ExecFunction(store *libstore.Store, funcName FuncName, argsJson string, opt
 		return r, nil
 
 	case FuncGetWebPageFromURL:
-		fmt.Println("functions: do get_web_page_from_url")
+		l.Info("functions: do %s\n", FuncGetWebPageFromURL)
 		input := GetWebPageFromURLInput{}
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)
@@ -188,7 +211,7 @@ func ExecFunction(store *libstore.Store, funcName FuncName, argsJson string, opt
 		return r, nil
 
 	case FuncGetPullRequestDiff:
-		fmt.Println("functions: do get_pull_request_diff")
+		l.Info("functions: do %s\n", FuncGetPullRequestDiff)
 		input := GetPullRequestDiffInput{}
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)
@@ -198,7 +221,17 @@ func ExecFunction(store *libstore.Store, funcName FuncName, argsJson string, opt
 			return "", fmt.Errorf("cat not call %s function", FuncGetPullRequestDiff)
 		}
 		return fn(input)
-
+	case FuncSearchFiles:
+		l.Info("functions: do %s\n", FuncSearchFiles)
+		input := SearchFilesInput{}
+		if err := marshalFuncArgs(argsJson, &input); err != nil {
+			return "", fmt.Errorf("failed to unmarshal args: %w", err)
+		}
+		r, err := SearchFiles(input)
+		if err != nil {
+			return "", err
+		}
+		return strings.Join(r, "\n"), nil
 	}
 
 	return "", errors.New("function not found")

@@ -3,7 +3,6 @@ package functions
 import (
 	"fmt"
 	"os"
-	"reflect"
 )
 
 const FuncListFiles = "list_files"
@@ -13,7 +12,6 @@ func InitListFilesFunction() Function {
 		Name:        FuncListFiles,
 		Description: "List the files within the directory like Unix ls command. Each line contains the file mode, byte size, and name",
 		Func:        ListFiles,
-		FuncType:    reflect.TypeOf(ListFiles),
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

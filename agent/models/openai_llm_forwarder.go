@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 
-	"github/clover0/github-issue-agent/agent"
 	"github/clover0/github-issue-agent/functions"
 	"github/clover0/github-issue-agent/logger"
 	"github/clover0/github-issue-agent/step"
@@ -14,7 +13,7 @@ type OpenAILLMForwarder struct {
 	openai OpenAI
 }
 
-func NewOpenAILLMForwarder(l logger.Logger) agent.LLMForwarder {
+func NewOpenAILLMForwarder(l logger.Logger) LLMForwarder {
 	apiKey, ok := os.LookupEnv("OPENAI_API_KEY")
 	if !ok {
 		panic("OPENAI_API_KEY is not set")
@@ -25,10 +24,10 @@ func NewOpenAILLMForwarder(l logger.Logger) agent.LLMForwarder {
 	}
 }
 
-func (o OpenAILLMForwarder) StartForward(input agent.StartCompletionInput) ([]agent.LLMMessage, error) {
+func (o OpenAILLMForwarder) StartForward(input StartCompletionInput) ([]LLMMessage, error) {
 	return o.openai.StartCompletion(
 		context.TODO(),
-		agent.StartCompletionInput{
+		StartCompletionInput{
 			Model:           input.Model,
 			SystemPrompt:    input.SystemPrompt,
 			StartUserPrompt: input.StartUserPrompt,
@@ -39,13 +38,13 @@ func (o OpenAILLMForwarder) StartForward(input agent.StartCompletionInput) ([]ag
 
 func (o OpenAILLMForwarder) ForwardLLM(
 	ctx context.Context,
-	input agent.StartCompletionInput,
+	input StartCompletionInput,
 	llmContexts []step.ReturnToLLMContext,
-	history []agent.LLMMessage,
-) ([]agent.LLMMessage, error) {
+	history []LLMMessage,
+) ([]LLMMessage, error) {
 	return o.openai.ContinueCompletion(ctx, input, llmContexts, history)
 }
 
-func (o OpenAILLMForwarder) ForwardStep(ctx context.Context, history []agent.LLMMessage) step.Step {
+func (o OpenAILLMForwarder) ForwardStep(ctx context.Context, history []LLMMessage) step.Step {
 	return o.openai.CompletionNextStep(ctx, history)
 }

@@ -14,42 +14,33 @@ type Prompt struct {
 	StartUserPrompt string
 }
 
-func BuildRequirementPrompt(promptTpl PromptTemplate, issue loader.Issue) (Prompt, error) {
+func BuildRequirementPrompt(promptTpl PromptTemplate, language string, issue loader.Issue) (Prompt, error) {
 	return BuildPrompt(promptTpl, "requirement", map[string]any{
-		"issue":       issue.Content,
-		"issueNumber": issue.Path,
+		"communicationLanguage": language,
+		"issue":                 issue.Content,
+		"issueNumber":           issue.Path,
 	})
 }
 
-func BuildDeveloperPrompt(promptTpl PromptTemplate, issueLoader loader.Loader, issueNumber string, instruction string) (Prompt, error) {
+func BuildDeveloperPrompt(promptTpl PromptTemplate, language string, issueLoader loader.Loader, issueNumber string, instruction string) (Prompt, error) {
+	// TODO: separate issueLoader and issue from this
 	iss, err := issueLoader.LoadIssue(context.TODO(), issueNumber)
 	if err != nil {
 		return Prompt{}, fmt.Errorf("failed to load issue: %w", err)
 	}
 
 	return BuildPrompt(promptTpl, "developer", map[string]any{
-		"issue":       iss.Content,
-		"issueNumber": issueNumber,
-		"instruction": instruction,
+		"communicationLanguage": language,
+		"issue":                 iss.Content,
+		"issueNumber":           issueNumber,
+		"instruction":           instruction,
 	})
 }
 
-func BuildSecurityPrompt(promptTpl PromptTemplate, changedFilesPath []string) (Prompt, error) {
+func BuildReviewManagerPrompt(promptTpl PromptTemplate, language string, issue loader.Issue, changedFilesPath []string) (Prompt, error) {
 	m := make(map[string]any)
 
-	m["filePaths"] = changedFilesPath
-
-	m["noFiles"] = ""
-	if len(changedFilesPath) == 0 {
-		m["noFiles"] = "no changed files"
-	}
-
-	return BuildPrompt(promptTpl, "security", m)
-}
-
-func BuildReviewManagerPrompt(promptTpl PromptTemplate, issue loader.Issue, changedFilesPath []string) (Prompt, error) {
-	m := make(map[string]any)
-
+	m["communicationLanguage"] = language
 	m["filePaths"] = changedFilesPath
 	m["issue"] = issue.Content
 
@@ -61,13 +52,12 @@ func BuildReviewManagerPrompt(promptTpl PromptTemplate, issue loader.Issue, chan
 	return BuildPrompt(promptTpl, "review-manager", m)
 }
 
-func BuildReviewerPrompt(promptTpl PromptTemplate, issue loader.Issue, prNumber int, reviewerPrompt string) (Prompt, error) {
-	m := make(map[string]any)
-
-	m["prNumber"] = prNumber
-	m["reviewerPrompt"] = reviewerPrompt
-
-	return BuildPrompt(promptTpl, "reviewer", m)
+func BuildReviewerPrompt(promptTpl PromptTemplate, language string, prNumber int, reviewerPrompt string) (Prompt, error) {
+	return BuildPrompt(promptTpl, "reviewer", map[string]any{
+		"communicationLanguage": language,
+		"prNumber":              prNumber,
+		"reviewerPrompt":        reviewerPrompt,
+	})
 }
 
 func BuildPrompt(promptTpl PromptTemplate, templateName string, templateMap map[string]any) (Prompt, error) {
@@ -81,23 +71,36 @@ func BuildPrompt(promptTpl PromptTemplate, templateName string, templateMap map[
 			break
 		}
 	}
-
 	if prpt.StartUserPrompt == "" {
 		return Prompt{}, fmt.Errorf("failed to find %s prompt. you must have  name=%s prompt in the prompt template", templateName, templateName)
 	}
 
-	tpl, err := template.New("prompt").Parse(prpt.StartUserPrompt)
+	systemPrompt, err := parseTemplate(prpt.SystemPrompt, templateMap)
 	if err != nil {
-		return Prompt{}, fmt.Errorf("failed to parse prompt template: %w", err)
+		return Prompt{}, fmt.Errorf("failed to parse system prompt: %w", err)
 	}
 
-	tplbuff := bytes.NewBuffer([]byte{})
-	if err := tpl.Execute(tplbuff, templateMap); err != nil {
-		return Prompt{}, fmt.Errorf("failed to execute prompt template: %w", err)
+	userPrompt, err := parseTemplate(prpt.StartUserPrompt, templateMap)
+	if err != nil {
+		return Prompt{}, fmt.Errorf("failed to parse user prompt: %w", err)
 	}
 
 	return Prompt{
-		SystemPrompt:    prpt.SystemPrompt,
-		StartUserPrompt: tplbuff.String(),
+		SystemPrompt:    systemPrompt,
+		StartUserPrompt: userPrompt,
 	}, nil
+}
+
+func parseTemplate(templateStr string, values map[string]any) (string, error) {
+	tpl, err := template.New("prompt").Parse(templateStr)
+	if err != nil {
+		return "", err
+	}
+
+	tplbuff := bytes.NewBuffer([]byte{})
+	if err := tpl.Execute(tplbuff, values); err != nil {
+		return "", fmt.Errorf("failed to execute prompt template: %w", err)
+	}
+
+	return tplbuff.String(), nil
 }
