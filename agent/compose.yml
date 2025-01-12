@@ -2,7 +2,7 @@ services:
   agent:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: dev-compose.Dockerfile
       target: development
     volumes:
       - ./:/usr/local/agent
