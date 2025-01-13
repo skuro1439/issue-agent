@@ -41,7 +41,7 @@ func main() {
 		panic(err)
 	}
 
-	imageName := "issue-agent"
+	imageName := "ghcr.io/clover0/issue-agent"
 	imageTag := containerImageTag
 	dockerEnvs := passEnvs()
 	containerName := "issue-agent"
