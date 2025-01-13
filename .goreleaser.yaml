@@ -3,7 +3,7 @@ project_name: issue-agent
 
 before:
   hooks:
-    - "cd agent && go mod tidy"
+    - "go mod tidy"
 
 builds:
   - id: runner
@@ -21,6 +21,7 @@ builds:
     ldflags:
       - -X main.containerImageTag={{.Tag}}
   - id: agent
+    dir: agent
     env:
       - CGO_ENABLED=0
     main: ./cmd/agent/main.go
