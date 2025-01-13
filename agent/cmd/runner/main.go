@@ -11,8 +11,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github/clover0/github-issue-agent/cli"
-	"github/clover0/github-issue-agent/config"
+	"github.com/clover0/issue-agent/cli"
+	"github.com/clover0/issue-agent/config"
 )
 
 const defaultConfigPath = "./issue_agent.yml"

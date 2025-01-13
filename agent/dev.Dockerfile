@@ -15,7 +15,7 @@ COPY . .
 # TODO: SLSA
 RUN cd /agent/src/cmd/agent && \
     go build \
-      -ldflags "-X github/clover0/github-issue-agent/cli.version=dev-$(date -u +'%Y-%m-%dT%H%M%SZ')" \
+      -ldflags "-X github.com/clover0/issue-agent/cli.version=dev-$(date -u +'%Y-%m-%dT%H%M%SZ')" \
       -o /agent/bin/agent
 
 ENV PATH="/agent/bin:$PATH"
