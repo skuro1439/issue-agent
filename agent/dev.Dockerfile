@@ -19,3 +19,5 @@ RUN cd /agent/src/cmd/agent && \
       -o /agent/bin/agent
 
 ENV PATH="/agent/bin:$PATH"
+
+ENTRYPOINT ["/agent/bin/agent"]

@@ -63,7 +63,6 @@ func main() {
 	}
 	args = append(args, dockerEnvs...)
 	args = append(args, imageName+":"+imageTag)
-	args = append(args, "agent") // agent binary is built by agent/main.go
 	args = append(args, os.Args[1:]...)
 	for _, a := range os.Args[1:] {
 		if strings.HasSuffix(a, "-config") {
