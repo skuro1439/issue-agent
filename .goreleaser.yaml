@@ -8,7 +8,7 @@ builds:
       - CGO_ENABLED=0
       - GO111MODULE=on
     main: ./cmd/runner/main.go
-    binary: runner
+    binary: issue-agent-runner
     goos:
       - linux
       - darwin
@@ -16,7 +16,7 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -X main.containerImageTag={{.Tag}}
+      - "-X main.containerImageTag={{.Tag}}"
   - id: agent
     dir: agent
     env:
@@ -29,6 +29,8 @@ builds:
     goarch:
       - amd64
       - arm64
+    ldflags:
+      - "-X github/clover0/github-issue-agent/cli.version={{ .Tag }}"
 
 dockers:
   - id: issue-agent-amd64
@@ -100,8 +102,19 @@ archives:
     builds:
       - runner
     name_template: >-
-      {{ .ProjectName }}_{{ .Binary }}_{{ .Os }}_{{ .Arch }}
+      {{ .Binary }}_{{ .Os }}_{{ .Arch }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
 
 release:
   prerelease: true
+
+brews:
+  - name: "{{ .ProjectName }}"
+    skip_upload: auto
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    repository:
+      owner: clover0
+      name: homebrew-issue-agent
+      token: "{{ .Env.HOMEBREW_GITHUB_TOKEN }}"
+    test: |
+      system "#{bin}/issue-agent version"
