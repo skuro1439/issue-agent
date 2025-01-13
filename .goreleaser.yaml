@@ -95,8 +95,10 @@ docker_signs:
 
 archives:
   - format: tar.gz
+    builds:
+      - runner
     name_template: >-
-      {{ .ProjectName }}_{{ .Os }}_{{ .Arch }}
+      {{ .ProjectName }}_{{ .Binary }}_{{ .Os }}_{{ .Arch }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
 
 release:
