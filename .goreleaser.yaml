@@ -3,7 +3,7 @@ project_name: issue-agent
 
 before:
   hooks:
-    - go mod tidy
+    - "cd agent && go mod tidy"
 
 builds:
   - id: runner
