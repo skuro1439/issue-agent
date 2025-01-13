@@ -22,6 +22,8 @@ func Execute() error {
 	// TODO: bind common flags to common struct here
 
 	switch command {
+	case "version":
+		return VersionCommand()
 	case "issue":
 		return IssueCommand(flags)
 	default:
