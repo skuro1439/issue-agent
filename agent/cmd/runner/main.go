@@ -16,6 +16,7 @@ import (
 )
 
 const defaultConfigPath = "./issue_agent.yml"
+const containerImageTag = "dev"
 
 // Use the docker command to start a container and execute the agent binary
 func main() {
@@ -37,7 +38,8 @@ func main() {
 		panic(err)
 	}
 
-	imageName := "agent-dev"
+	imageName := "issue-agent"
+	imageTag := containerImageTag
 	dockerEnvs := passEnvs()
 	containerName := "issue-agent"
 	args := []string{
@@ -57,7 +59,7 @@ func main() {
 		args = append(args, "-v", path+":"+config.PromptFilePath)
 	}
 	args = append(args, dockerEnvs...)
-	args = append(args, imageName)
+	args = append(args, imageName+":"+imageTag)
 	args = append(args, "agent") // agent binary is built by agent/main.go
 	args = append(args, os.Args[1:]...)
 	for _, a := range os.Args[1:] {
