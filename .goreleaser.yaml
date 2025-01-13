@@ -107,6 +107,7 @@ archives:
 
 release:
   prerelease: true
+  replace_existing_artifacts: true
 
 brews:
   - name: "{{ .ProjectName }}"
