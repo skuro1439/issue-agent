@@ -5,7 +5,7 @@ on:
     tags:
       - "v*"
 
-permissions: { }
+permissions: {}
 
 jobs:
   build:
@@ -65,7 +65,7 @@ jobs:
           image_and_tag=$(echo "$ARTIFACTS" | jq -er 'first(.[] | select (.goarch=="arm64" and .type=="Published Docker Image")) | .path')
           image=$(echo "${image_and_tag}" | cut -d':' -f1)
           sha_digest=$(echo "$ARTIFACTS" |  jq -er 'first(.[] | select (.goarch=="arm64" and .type=="Published Docker Image")) | .extra.Digest')
-          
+
           echo "name=$image" >> "$GITHUB_OUTPUT"
           echo "digest=$sha_digest" >> "$GITHUB_OUTPUT"
 
@@ -82,7 +82,7 @@ jobs:
           push-to-registry: true
 
   provenance-amd64:
-    needs: [ build ]
+    needs: [build]
     permissions:
       actions: read
       id-token: write
@@ -96,7 +96,7 @@ jobs:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
 
   provenance-arm64:
-    needs: [ build ]
+    needs: [build]
     permissions:
       actions: read
       id-token: write

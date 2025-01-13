@@ -8,7 +8,7 @@ builds:
       - CGO_ENABLED=0
       - GO111MODULE=on
     main: ./cmd/runner/main.go
-    binary: issue-agent-runner
+    binary: issue-agent
     goos:
       - linux
       - darwin
