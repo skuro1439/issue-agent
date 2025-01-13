@@ -16,7 +16,10 @@ import (
 )
 
 const defaultConfigPath = "./issue_agent.yml"
-const containerImageTag = "dev"
+
+// This value is set at release build time
+// ldflags "-X github.com/clover0/issue-agent/main.containerImageTag=v0.0.1"
+var containerImageTag = "dev"
 
 // Use the docker command to start a container and execute the agent binary
 func main() {
