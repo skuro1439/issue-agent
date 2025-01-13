@@ -1,0 +1,6 @@
+.git
+.tmp
+.github
+.idea
+.vscode
+.env*

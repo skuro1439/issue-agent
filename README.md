@@ -19,37 +19,26 @@ Only GitHub pull requests are supported.
 ## Usage
 ### Startup Example
 - Set up the config file
-```
-cp agent/config/default_config.yml agent/issue_agent.yml
-```
+
+Copy [default_config.yml](agent/config/default_config.yml) to your repository root as `issue_agent.yml`.
+
+```shell
+
 
 ```yaml
-# Edit agent/config.yaml
 # Example
-workdir: "/tmp/repositories/github-issue-agent"
+# issue_agent.yml
+
+communication_language: "Japanese"
 agent:
-  prompt_template: ""
   model: "claude-3-5-sonnet-20241022"
-  max_steps: 100
+  max_steps: 70
   git:
-    user_name: "t.koenuma2@gmail.com"
-    user_email: "takeshi.koenuma"
+    user_name: "username"
+    user_email: "email@example.com"
   github:
-    no_submit: false
-    clone_repository: true
     owner: "clover0"
     repository: "github-issue-agent"
-    base_branch: "main"
-  allow_functions:
-    - get_pull_request_diff
-    - get_web_page_from_url
-    - get_web_search_result
-    - list_files
-    - modify_file
-    - open_file
-    - put_file
-    - submit_file_service
-    - submit_files
 ```
 
 - Human decides what issue they want to resolve

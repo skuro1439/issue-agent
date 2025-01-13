@@ -1,0 +1,106 @@
+version: 2
+project_name: issue-agent
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: runner
+    dir: agent
+    env:
+      - CGO_ENABLED=0
+    main: ./cmd/runner/main.go
+    binary: runner
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -X main.containerImageTag={{.Tag}}
+  - id: agent
+    env:
+      - CGO_ENABLED=0
+    main: ./cmd/agent/main.go
+    binary: agent
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+dockers:
+  - id: issue-agent-amd64
+    image_templates:
+      - "ghcr.io/clover0/issue-agent-amd64:{{ .Tag }}"
+    ids:
+      - agent
+    use: buildx
+    goos: linux
+    goarch: amd64
+    dockerfile: agent/release.Dockerfile
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.description={{.ProjectName}}"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+  - id: issue-agent-arm64
+    image_templates:
+      - "ghcr.io/clover0/issue-agent-arm64v8:{{ .Tag }}"
+    ids:
+      - agent
+    use: buildx
+    goos: linux
+    goarch: arm64
+    dockerfile: agent/release.Dockerfile
+    build_flag_templates:
+      - "--platform=linux/arm64/v8"
+      - "--label=org.opencontainers.image.description={{.ProjectName}}"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+
+docker_manifests:
+  - name_template: "ghcr.io/clover0/issue-agent:{{ .Tag }}"
+    id: issue-agent-manifest
+    image_templates:
+      - "ghcr.io/clover0/issue-agent-amd64:{{ .Tag }}"
+      - "ghcr.io/clover0/issue-agent-arm64v8:{{ .Tag }}"
+
+signs:
+  - cmd: cosign
+    artifacts: checksum
+    certificate: ${artifact}.pem
+    signature: ${artifact}.sig
+    args:
+      - "sign-blob"
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "--oidc-provider"
+      - "github"
+      - "${artifact}"
+      - "--yes"
+
+docker_signs:
+  - cmd: cosign
+    ids:
+      - issue-agent-manifest
+    artifacts: manifests
+    args:
+      - "sign"
+      - "${artifact}"
+      - "--yes"
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Os }}_{{ .Arch }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+
+release:
+  prerelease: true

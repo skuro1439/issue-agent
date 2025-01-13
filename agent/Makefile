@@ -10,5 +10,8 @@ build: $(TEMPDIR)
 run/test:
 	go test ./... -v -parallel 4 -race
 
-dev/image:
-	docker build -t agent-dev -f dev.Dockerfile .
+image/dev:
+	docker build -t issue-agent:dev -f dev.Dockerfile .
+
+#image/release:
+#	echo "See .github/workflows/release.yml"
