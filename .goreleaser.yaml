@@ -1,10 +1,6 @@
 version: 2
 project_name: issue-agent
 
-before:
-  hooks:
-    - "go mod tidy"
-
 builds:
   - id: runner
     dir: agent
