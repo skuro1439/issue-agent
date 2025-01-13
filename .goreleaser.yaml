@@ -1,6 +1,9 @@
 version: 2
 project_name: issue-agent
 
+git:
+  tag_sort: -version:creatordate
+
 builds:
   - id: runner
     dir: agent
