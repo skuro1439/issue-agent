@@ -4,8 +4,8 @@ on:
     branches:
       #      - main
       - update_*
-    paths:
-      - website/**
+#    paths:
+#      - website/**
 
 permissions:
   contents: write
