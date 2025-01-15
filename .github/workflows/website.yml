@@ -26,6 +26,7 @@ jobs:
 
       - name: Build website pages
         run: |
+          mkdir -p site
           docker compose run mkdocs mkdocs build
           chown -R $USER:$USER site
 
