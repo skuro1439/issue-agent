@@ -27,12 +27,7 @@ jobs:
       - name: Build website pages
         run: |
           mkdir -p site
-          docker compose run mkdocs sh -c "mkdocs build && chown -R $(id -u):$(id -g) site"
-
-      - run: |
-          ls -al
-          pwd
-          ls -al site
+          docker compose run mkdocs mkdocs build
 
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa #v3.0.1
         with:
