@@ -1,6 +1,7 @@
 # GitHub Issue Agent
 Agent that, given an assignment, produces work products in the git repository.
 
+[Documentation](https://clover0.github.io/issue-agent/)
 
 ## Models
 The following models are supported.
