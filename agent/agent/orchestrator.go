@@ -31,6 +31,7 @@ func OrchestrateAgents(
 	loaderr loader.Loader,
 	baseBranch string,
 	issue loader.Issue,
+	workRepository string,
 	gh *github.Client,
 ) error {
 	llmForwarder := models.SelectForwarder(lo, conf.Agent.Model)
@@ -48,7 +49,7 @@ func OrchestrateAgents(
 
 	functions.InitializeFunctions(
 		*conf.Agent.GitHub.NoSubmit,
-		agithub.NewGitHubService(conf.Agent.GitHub.Owner, conf.Agent.GitHub.Repository, gh, lo),
+		agithub.NewGitHubService(conf.Agent.GitHub.Owner, workRepository, gh, lo),
 		conf.Agent.AllowFunctions,
 	)
 	lo.Info("allowed functions: %s\n", strings.Join(util.Map(
@@ -56,7 +57,7 @@ func OrchestrateAgents(
 		func(e functions.Function) string { return e.Name.String() },
 	), ","))
 
-	submitServiceCaller := agithub.NewSubmitFileGitHubService(conf.Agent.GitHub.Owner, conf.Agent.GitHub.Repository, gh, lo).
+	submitServiceCaller := agithub.NewSubmitFileGitHubService(conf.Agent.GitHub.Owner, workRepository, gh, lo).
 		Caller(ctx, functions.SubmitFilesServiceInput{
 			BaseBranch: baseBranch,
 			GitEmail:   conf.Agent.Git.UserEmail,
@@ -204,7 +205,7 @@ func OrchestrateAgents(
 
 		if _, _, err := gh.PullRequests.CreateReview(context.Background(),
 			conf.Agent.GitHub.Owner,
-			conf.Agent.GitHub.Repository,
+			workRepository,
 			submittedPRNumber,
 			&github.PullRequestReviewRequest{
 				Event:    github.String("COMMENT"),

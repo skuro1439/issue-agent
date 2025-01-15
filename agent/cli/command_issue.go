@@ -28,7 +28,7 @@ func IssueCommand(flags []string) error {
 	lo := logger.NewPrinter(conf.LogLevel)
 
 	if *conf.Agent.GitHub.CloneRepository {
-		if err := agithub.CloneRepository(lo, conf); err != nil {
+		if err := agithub.CloneRepository(lo, conf, cliIn.WorkRepository); err != nil {
 			lo.Error("failed to clone repository")
 			return err
 		}
@@ -54,14 +54,14 @@ func IssueCommand(flags []string) error {
 		}
 	} else {
 		lo.Info("load issue from GitHub\n")
-		issLoader = loader.NewGitHubLoader(gh, conf.Agent.GitHub.Owner, conf.Agent.GitHub.Repository)
+		issLoader = loader.NewGitHubLoader(gh, conf.Agent.GitHub.Owner, cliIn.WorkRepository)
 		if issue, err = issLoader.LoadIssue(ctx, cliIn.GithubIssueNumber); err != nil {
 			lo.Error("failed to load issue from GitHub: %s\n", err)
 			return err
 		}
 	}
 
-	return agent.OrchestrateAgents(ctx, lo, conf, issLoader, cliIn.BaseBranch, issue, gh)
+	return agent.OrchestrateAgents(ctx, lo, conf, issLoader, cliIn.BaseBranch, issue, cliIn.WorkRepository, gh)
 }
 
 func newGitHub() *github.Client {

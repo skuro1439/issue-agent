@@ -40,7 +40,6 @@ type Config struct {
 			NoSubmit        *bool  `yaml:"no_submit"`
 			CloneRepository *bool  `yaml:"clone_repository"`
 			Owner           string `yaml:"owner" validate:"required"`
-			Repository      string `yaml:"repository" validate:"required"`
 		}
 		AllowFunctions []string `yaml:"allow_functions" validate:"required"`
 	} `yaml:"agent" validate:"required"`

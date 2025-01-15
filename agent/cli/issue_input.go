@@ -10,12 +10,13 @@ import (
 type IssueInputs struct {
 	Common            *CommonInput
 	GithubIssueNumber string
+	WorkRepository    string `validate:"required"`
 	BaseBranch        string `validate:"required"`
 	FromFile          string
 }
 
-func IssueFlags() (*flag.FlagSet, IssueInputs) {
-	flagMapper := IssueInputs{
+func IssueFlags() (*flag.FlagSet, *IssueInputs) {
+	flagMapper := &IssueInputs{
 		Common: &CommonInput{},
 	}
 
@@ -23,6 +24,7 @@ func IssueFlags() (*flag.FlagSet, IssueInputs) {
 
 	addCommonFlags(cmd, flagMapper.Common)
 
+	cmd.StringVar(&flagMapper.WorkRepository, "work_repository", "", "Working repository")
 	cmd.StringVar(&flagMapper.GithubIssueNumber, "github_issue_number", "", "GitHubLoader issue number")
 	cmd.StringVar(&flagMapper.BaseBranch, "base_branch", "", "Base Branch for pull request")
 	cmd.StringVar(&flagMapper.FromFile, "from_file", "", "Issue content from file path")
@@ -46,5 +48,5 @@ func ParseIssueInput(flags []string) (IssueInputs, error) {
 		return IssueInputs{}, fmt.Errorf("github_issue_number or from_file is required")
 	}
 
-	return cliIn, nil
+	return *cliIn, nil
 }
