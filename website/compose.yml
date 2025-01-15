@@ -1,5 +1,6 @@
 services:
   mkdocs:
+    user: "${USER}"
     build:
       context: .
       dockerfile: Dockerfile
