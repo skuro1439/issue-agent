@@ -30,16 +30,14 @@ theme:
   features:
     - content.code.copy
     - content.tabs.link
+    - navigation.tabs
+    - content.tabs.link
 
 nav:
   - Getting Started:
       - getting-started/installation.md
       - getting-started/setup.md
       - getting-started/usage.md
-
-features:
-  - navigation.tabs
-  - content.tabs.link
 
 plugins:
   - minify:
