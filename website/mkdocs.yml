@@ -36,6 +36,8 @@ nav:
       - getting-started/installation.md
       - getting-started/setup.md
       - getting-started/usage.md
+  - Consept:
+      - core-concept/concept.md
   - Configuration:
       - Command: configuration/command.md
       - YAML: configuration/yaml.md
