@@ -16,8 +16,6 @@ Configuration parameter example as follows. See `Configuration` for more details
 communication_language: "Japanese"
 agent:
   model: "claude-3-5-sonnet-20241022"
-  github:
-    owner: "clover0" # GitHub repository owner
 ```
 
 Set up the environment variables.

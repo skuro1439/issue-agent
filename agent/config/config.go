@@ -61,9 +61,6 @@ func LoadDefault() (Config, error) {
 		return cf, err
 	}
 
-	if err := ValidateConfig(cf); err != nil {
-		return cf, err
-	}
 	return cf, nil
 }
 
