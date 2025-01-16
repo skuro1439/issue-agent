@@ -106,7 +106,7 @@ func ValidateConfig(config Config) error {
 
 func setDefaults(conf Config) Config {
 	if conf.LogLevel == "" {
-		conf.LogLevel = LogInfo
+		conf.LogLevel = LogDebug
 	}
 
 	if conf.Language == "" {
