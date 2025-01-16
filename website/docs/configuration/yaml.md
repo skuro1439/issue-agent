@@ -1,4 +1,5 @@
-## Configuration YAML
+# Configuration YAML
+
 At your repository root, create a `issue_agent.yml` file with the following content.
 
 ```yaml
@@ -68,3 +69,11 @@ agent:
     - submit_files
     - search_files
 ```
+
+## Models
+
+- OpenAI models
+    - gpt-4o
+    - gpt-4o-mini
+- Anthropic models
+    - claude-3-5-sonnet ⭐️ Recommended!
