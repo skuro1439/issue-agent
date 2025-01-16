@@ -10,7 +10,7 @@ Example:
 - Base Branch `main` to create a pull request
 
 ```shell
-$ issue-agent issue --github_issue_number 123 --base_branch main 
+$ issue-agent issue --work_repository example-repository --github_issue_number 123 --base_branch main 
 ```
 
 Repository configuration is in `issue_agent.yml` file.
