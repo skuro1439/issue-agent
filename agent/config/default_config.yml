@@ -1,7 +1,7 @@
 # Communication language
 # English, Japanese...
 # Default is English
-communication_language: "English"
+language: "English"
 
 # Default is /tmp/repositories
 workdir: "/tmp/repositories"
@@ -19,7 +19,7 @@ agent:
   # Required
   # LLM model name
   # The recommend model is Claude 3.5 Sonnet
-  model: "claude-3-5-sonnet-20241022"
+  model: "claude-3-5-sonnet-latest"
 
   # Maximum steps to run agent
   # The following are defined as 1 step
@@ -32,11 +32,11 @@ agent:
   skip_review_agents: true
 
   git:
-    # Required
-    user_name: ""
+    # git user name
+    user_name: "github-actions[bot]"
 
-    # Required
-    user_email: ""
+    # git user email
+    user_email: "41898282+github-actions[bot]@users.noreply.github.com"
 
   # GitHub environment for agent
   github:

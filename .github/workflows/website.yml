@@ -2,10 +2,7 @@ name: ci
 on:
   push:
     branches:
-      #      - main
-      - update_*
-#    paths:
-#      - website/**
+      - main
 
 jobs:
   deploy:

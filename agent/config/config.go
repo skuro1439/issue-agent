@@ -24,24 +24,24 @@ const (
 )
 
 type Config struct {
-	CommunicationLanguage string `yaml:"communication_language"`
-	WorkDir               string `yaml:"workdir"`
-	LogLevel              string `yaml:"log_level" validate:"log_level"`
-	Agent                 struct {
+	Language string `yaml:"language"`
+	WorkDir  string `yaml:"workdir"`
+	LogLevel string `yaml:"log_level" validate:"log_level"`
+	Agent    struct {
 		PromptPath       string `yaml:"prompt_path"`
-		Model            string `yaml:"model" validate:"required"`
+		Model            string `yaml:"model"`
 		MaxSteps         int    `yaml:"max_steps" validate:"gte=0"`
 		SkipReviewAgents *bool  `yaml:"skip_review_agents"`
 		Git              struct {
-			UserName  string `yaml:"user_name" validate:"required"`
-			UserEmail string `yaml:"user_email" validate:"required"`
+			UserName  string `yaml:"user_name"`
+			UserEmail string `yaml:"user_email"`
 		} `yaml:"git"`
 		GitHub struct {
 			NoSubmit        *bool  `yaml:"no_submit"`
 			CloneRepository *bool  `yaml:"clone_repository"`
 			Owner           string `yaml:"owner" validate:"required"`
 		}
-		AllowFunctions []string `yaml:"allow_functions" validate:"required"`
+		AllowFunctions []string `yaml:"allow_functions"`
 	} `yaml:"agent" validate:"required"`
 }
 
@@ -61,9 +61,6 @@ func LoadDefault() (Config, error) {
 		return cf, err
 	}
 
-	if err := ValidateConfig(cf); err != nil {
-		return cf, err
-	}
 	return cf, nil
 }
 
@@ -108,27 +105,60 @@ func ValidateConfig(config Config) error {
 }
 
 func setDefaults(conf Config) Config {
-	if conf.CommunicationLanguage == "" {
-		conf.CommunicationLanguage = "English"
+	if conf.LogLevel == "" {
+		conf.LogLevel = LogDebug
+	}
+
+	if conf.Language == "" {
+		conf.Language = "English"
 	}
 
 	if conf.WorkDir == "" {
 		conf.WorkDir = DefaultWorkDir
 	}
 
+	if conf.Agent.Model == "" {
+		conf.Agent.Model = "claude-3-5-sonnet-latest"
+	}
+	if conf.Agent.MaxSteps == 0 {
+		conf.Agent.MaxSteps = 70
+	}
+
+	if conf.Agent.Git.UserName == "" {
+		conf.Agent.Git.UserName = "github-actions[bot]"
+	}
+	if conf.Agent.Git.UserEmail == "" {
+		conf.Agent.Git.UserEmail = "41898282+github-actions[bot]@users.noreply.github.com"
+	}
+
 	if conf.Agent.GitHub.NoSubmit == nil {
 		noSubmit := false
 		conf.Agent.GitHub.NoSubmit = &noSubmit
 	}
-
 	if conf.Agent.GitHub.CloneRepository == nil {
 		clone := true
 		conf.Agent.GitHub.CloneRepository = &clone
 	}
 
 	if conf.Agent.SkipReviewAgents == nil {
-		skip := false
+		skip := true
 		conf.Agent.SkipReviewAgents = &skip
+	}
+
+	// TODO: default value
+	if len(conf.Agent.AllowFunctions) == 0 {
+		conf.Agent.AllowFunctions = []string{
+			"submit_files",
+			"get_pull_request_diff",
+			// "get_web_page_from_url",
+			// "get_web_search_result",
+			"list_files",
+			"modify_file",
+			"open_file",
+			"put_file",
+			"submit_files",
+			"search_files",
+		}
 	}
 
 	return conf

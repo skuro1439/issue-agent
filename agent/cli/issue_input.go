@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+
+	"github.com/clover0/issue-agent/config"
 )
 
 type IssueInputs struct {
@@ -49,4 +51,20 @@ func ParseIssueInput(flags []string) (IssueInputs, error) {
 	}
 
 	return *cliIn, nil
+}
+
+func MergeIssueInputConfig(conf config.Config, inputs IssueInputs) config.Config {
+	if inputs.Common.Language != "" {
+		conf.Language = inputs.Common.Language
+	}
+
+	if inputs.Common.Model != "" {
+		conf.Agent.Model = inputs.Common.Model
+	}
+
+	if inputs.Common.GitHubOwner != "" {
+		conf.Agent.GitHub.Owner = inputs.Common.GitHubOwner
+	}
+
+	return conf
 }

@@ -25,6 +25,12 @@ func IssueCommand(flags []string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
+	conf = MergeIssueInputConfig(conf, cliIn)
+
+	if err := config.ValidateConfig(conf); err != nil {
+		return err
+	}
+
 	lo := logger.NewPrinter(conf.LogLevel)
 
 	if *conf.Agent.GitHub.CloneRepository {
