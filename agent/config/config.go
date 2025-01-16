@@ -56,7 +56,15 @@ func isValidLogLevel(fl validator.FieldLevel) bool {
 }
 
 func LoadDefault() (Config, error) {
-	return Load(ConfigFilePath)
+	cf, err := Load(ConfigFilePath)
+	if err != nil {
+		return cf, err
+	}
+
+	if err := ValidateConfig(cf); err != nil {
+		return cf, err
+	}
+	return cf, nil
 }
 
 func Load(path string) (Config, error) {
@@ -83,10 +91,6 @@ func Load(path string) (Config, error) {
 	}
 
 	cnfg = setDefaults(cnfg)
-
-	if err := ValidateConfig(cnfg); err != nil {
-		return cnfg, err
-	}
 
 	return cnfg, nil
 }
