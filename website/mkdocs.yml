@@ -1,4 +1,4 @@
-site_name: issue agent
+site_name: Issue Agent
 repo_name: clover0/issue-agent
 repo_url: https://github.com/clover0/issue-agent
 
@@ -30,14 +30,15 @@ theme:
   features:
     - content.code.copy
     - content.tabs.link
-    - navigation.tabs
-    - content.tabs.link
 
 nav:
   - Getting Started:
       - getting-started/installation.md
       - getting-started/setup.md
       - getting-started/usage.md
+  - Configuration:
+      - Command: configuration/command.md
+      - YAML: configuration/yaml.md
 
 plugins:
   - minify:

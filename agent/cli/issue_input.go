@@ -24,8 +24,8 @@ func IssueFlags() (*flag.FlagSet, *IssueInputs) {
 
 	addCommonFlags(cmd, flagMapper.Common)
 
-	cmd.StringVar(&flagMapper.WorkRepository, "work_repository", "", "Working repository")
-	cmd.StringVar(&flagMapper.GithubIssueNumber, "github_issue_number", "", "GitHubLoader issue number")
+	cmd.StringVar(&flagMapper.WorkRepository, "work_repository", "", "Working repository to develop and create pull request")
+	cmd.StringVar(&flagMapper.GithubIssueNumber, "github_issue_number", "", "GitHub issue number to solve")
 	cmd.StringVar(&flagMapper.BaseBranch, "base_branch", "", "Base Branch for pull request")
 	cmd.StringVar(&flagMapper.FromFile, "from_file", "", "Issue content from file path")
 

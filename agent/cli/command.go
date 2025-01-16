@@ -41,11 +41,12 @@ func Execute() error {
 }
 
 func help(lo logger.Logger) {
-	msg := "Usage\n"
-	msg += "  issue-agent <command> [flags]\n"
-	msg += "Commands"
-	msg += "  help: Show usage of commands and flags\n"
-	msg += "  version: Show version of issue-agent CLI\n"
+	msg := `Usage
+  issue-agent <command> [flags]
+Commands  help: Show usage of commands and flags
+  help: Show usage of commands and flags
+  version: Show version of issue-agent CLI
+`
 	issueFlags, _ := IssueFlags()
 	msg += "  issue:\n"
 	issueFlags.VisitAll(func(flg *flag.Flag) {

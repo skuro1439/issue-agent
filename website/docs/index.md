@@ -8,7 +8,7 @@ When an Agent is given an issue, it will autonomously attempt to solve it and su
 
 
 ### Very limited scope
-Issue Agent is very limited in what it can do.  This is because it is designed to be secure and usable in practice.
+Issue Agent is very limited in what it can do. This is because it is designed to be secure and usable in practice.
 
 What we mean by secure here are the following:
 

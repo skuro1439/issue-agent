@@ -4,10 +4,10 @@ Copy [default_config.yml](https://github.com/clover0/issue-agent/blob/main/agent
 and edit the file.
 
 
-Or you can use the following minimum YAML to create a config file.
+Or you can use the following minimum YAML to create `issue-agent.yml`.
 
 
-Configuration parameter example as follows. See [default_config.yml](https://github.com/clover0/issue-agent/blob/main/agent/config/default_config.yml) for more details.
+Configuration parameter example as follows. See `Configuration` for more details.
 
 ```yaml
 # Minimum Example
