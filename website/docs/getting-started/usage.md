@@ -24,7 +24,8 @@ $ GITHUB_TOKEN=$(gh auth token) \
                     --work_repository example-repository \
                     --github_issue_number 123 \
                     --base_branch main  \
-                    --model claude-3-5-sonnet-latest
+                    --model claude-3-5-sonnet-latest \
+                    --language Japanese
 ```
 
 OPENAI_API_KEY or ANTHROPIC_API_KEY environment variable is required
