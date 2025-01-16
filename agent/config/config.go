@@ -24,10 +24,10 @@ const (
 )
 
 type Config struct {
-	CommunicationLanguage string `yaml:"communication_language"`
-	WorkDir               string `yaml:"workdir"`
-	LogLevel              string `yaml:"log_level" validate:"log_level"`
-	Agent                 struct {
+	Language string `yaml:"language"`
+	WorkDir  string `yaml:"workdir"`
+	LogLevel string `yaml:"log_level" validate:"log_level"`
+	Agent    struct {
 		PromptPath       string `yaml:"prompt_path"`
 		Model            string `yaml:"model"`
 		MaxSteps         int    `yaml:"max_steps" validate:"gte=0"`
@@ -109,8 +109,8 @@ func setDefaults(conf Config) Config {
 		conf.LogLevel = LogInfo
 	}
 
-	if conf.CommunicationLanguage == "" {
-		conf.CommunicationLanguage = "English"
+	if conf.Language == "" {
+		conf.Language = "English"
 	}
 
 	if conf.WorkDir == "" {

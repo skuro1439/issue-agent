@@ -16,9 +16,9 @@ type Prompt struct {
 
 func BuildRequirementPrompt(promptTpl PromptTemplate, language string, issue loader.Issue) (Prompt, error) {
 	return BuildPrompt(promptTpl, "requirement", map[string]any{
-		"communicationLanguage": language,
-		"issue":                 issue.Content,
-		"issueNumber":           issue.Path,
+		"Language":    language,
+		"issue":       issue.Content,
+		"issueNumber": issue.Path,
 	})
 }
 
@@ -30,17 +30,17 @@ func BuildDeveloperPrompt(promptTpl PromptTemplate, language string, issueLoader
 	}
 
 	return BuildPrompt(promptTpl, "developer", map[string]any{
-		"communicationLanguage": language,
-		"issue":                 iss.Content,
-		"issueNumber":           issueNumber,
-		"instruction":           instruction,
+		"Language":    language,
+		"issue":       iss.Content,
+		"issueNumber": issueNumber,
+		"instruction": instruction,
 	})
 }
 
 func BuildReviewManagerPrompt(promptTpl PromptTemplate, language string, issue loader.Issue, changedFilesPath []string) (Prompt, error) {
 	m := make(map[string]any)
 
-	m["communicationLanguage"] = language
+	m["Language"] = language
 	m["filePaths"] = changedFilesPath
 	m["issue"] = issue.Content
 
@@ -54,9 +54,9 @@ func BuildReviewManagerPrompt(promptTpl PromptTemplate, language string, issue l
 
 func BuildReviewerPrompt(promptTpl PromptTemplate, language string, prNumber int, reviewerPrompt string) (Prompt, error) {
 	return BuildPrompt(promptTpl, "reviewer", map[string]any{
-		"communicationLanguage": language,
-		"prNumber":              prNumber,
-		"reviewerPrompt":        reviewerPrompt,
+		"Language":       language,
+		"prNumber":       prNumber,
+		"reviewerPrompt": reviewerPrompt,
 	})
 }
 

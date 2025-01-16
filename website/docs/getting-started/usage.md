@@ -20,7 +20,11 @@ With environment variables in one line. [`gh` CLI is useful](https://github.com/
 ```shell
 $ GITHUB_TOKEN=$(gh auth token) \
   ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY} \
-  issue-agent issue --work_repository example-repository --github_issue_number 123 --base_branch main
+  issue-agent issue --github_owner clover0 \
+                    --work_repository example-repository \
+                    --github_issue_number 123 \
+                    --base_branch main  \
+                    --model claude-3-5-sonnet-latest
 ```
 
 OPENAI_API_KEY or ANTHROPIC_API_KEY environment variable is required

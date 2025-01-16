@@ -1,7 +1,7 @@
 # Communication language
 # English, Japanese...
 # Default is English
-communication_language: "English"
+language: "English"
 
 # Default is /tmp/repositories
 workdir: "/tmp/repositories"

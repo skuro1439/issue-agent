@@ -6,7 +6,7 @@ At your repository root, create a `issue_agent.yml` file with the following cont
 # Communication language
 # English, Japanese...
 # Default is English
-communication_language: "Japanese"
+language: "Japanese"
 
 # Required
 workdir: "/tmp/repositories/github-issue-agent"
