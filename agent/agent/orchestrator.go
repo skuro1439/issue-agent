@@ -9,15 +9,15 @@ import (
 
 	"github.com/google/go-github/v66/github"
 
-	"github/clover0/github-issue-agent/config"
-	"github/clover0/github-issue-agent/functions"
-	"github/clover0/github-issue-agent/functions/agithub"
-	"github/clover0/github-issue-agent/loader"
-	"github/clover0/github-issue-agent/logger"
-	"github/clover0/github-issue-agent/models"
-	libprompt "github/clover0/github-issue-agent/prompt"
-	"github/clover0/github-issue-agent/store"
-	"github/clover0/github-issue-agent/util"
+	"github.com/clover0/issue-agent/config"
+	"github.com/clover0/issue-agent/functions"
+	"github.com/clover0/issue-agent/functions/agithub"
+	"github.com/clover0/issue-agent/loader"
+	"github.com/clover0/issue-agent/logger"
+	"github.com/clover0/issue-agent/models"
+	libprompt "github.com/clover0/issue-agent/prompt"
+	"github.com/clover0/issue-agent/store"
+	"github.com/clover0/issue-agent/util"
 )
 
 // OrchestrateAgents orchestrates agents
@@ -31,6 +31,7 @@ func OrchestrateAgents(
 	loaderr loader.Loader,
 	baseBranch string,
 	issue loader.Issue,
+	workRepository string,
 	gh *github.Client,
 ) error {
 	llmForwarder := models.SelectForwarder(lo, conf.Agent.Model)
@@ -48,7 +49,7 @@ func OrchestrateAgents(
 
 	functions.InitializeFunctions(
 		*conf.Agent.GitHub.NoSubmit,
-		agithub.NewGitHubService(conf.Agent.GitHub.Owner, conf.Agent.GitHub.Repository, gh, lo),
+		agithub.NewGitHubService(conf.Agent.GitHub.Owner, workRepository, gh, lo),
 		conf.Agent.AllowFunctions,
 	)
 	lo.Info("allowed functions: %s\n", strings.Join(util.Map(
@@ -56,7 +57,7 @@ func OrchestrateAgents(
 		func(e functions.Function) string { return e.Name.String() },
 	), ","))
 
-	submitServiceCaller := agithub.NewSubmitFileGitHubService(conf.Agent.GitHub.Owner, conf.Agent.GitHub.Repository, gh, lo).
+	submitServiceCaller := agithub.NewSubmitFileGitHubService(conf.Agent.GitHub.Owner, workRepository, gh, lo).
 		Caller(ctx, functions.SubmitFilesServiceInput{
 			BaseBranch: baseBranch,
 			GitEmail:   conf.Agent.Git.UserEmail,
@@ -204,7 +205,7 @@ func OrchestrateAgents(
 
 		if _, _, err := gh.PullRequests.CreateReview(context.Background(),
 			conf.Agent.GitHub.Owner,
-			conf.Agent.GitHub.Repository,
+			workRepository,
 			submittedPRNumber,
 			&github.PullRequestReviewRequest{
 				Event:    github.String("COMMENT"),

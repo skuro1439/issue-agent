@@ -5,11 +5,11 @@ import (
 	"os"
 	"os/exec"
 
-	"github/clover0/github-issue-agent/config"
-	"github/clover0/github-issue-agent/logger"
+	"github.com/clover0/issue-agent/config"
+	"github.com/clover0/issue-agent/logger"
 )
 
-func CloneRepository(lo logger.Logger, conf config.Config) error {
+func CloneRepository(lo logger.Logger, conf config.Config, workRepository string) error {
 	token, ok := os.LookupEnv("GITHUB_TOKEN")
 	if !ok {
 		lo.Error("GITHUB_TOKEN is not set")
@@ -17,7 +17,7 @@ func CloneRepository(lo logger.Logger, conf config.Config) error {
 	}
 	lo.Info("cloning repository...\n")
 	cmd := exec.Command("git", "clone", "--depth", "1",
-		fmt.Sprintf("https://oauth2:%s@github.com/%s/%s.git", token, conf.Agent.GitHub.Owner, conf.Agent.GitHub.Repository),
+		fmt.Sprintf("https://oauth2:%s@github.com/%s/%s.git", token, conf.Agent.GitHub.Owner, workRepository),
 		conf.WorkDir,
 	)
 	output, err := cmd.CombinedOutput()
