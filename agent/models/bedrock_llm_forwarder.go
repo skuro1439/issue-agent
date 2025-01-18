@@ -4,36 +4,36 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/clover0/issue-agent/logger"
 	"github.com/clover0/issue-agent/step"
 )
 
-type AnthropicLLMForwarder struct {
-	anthropic AnthropicClient
+type BedrockLLMForwarder struct {
+	Bedrock BedrockClient
 }
 
-func NewAnthropicLLMForwarder(l logger.Logger) LLMForwarder {
-	token, ok := os.LookupEnv("ANTHROPIC_API_KEY")
-	if !ok {
-		panic("ANTHROPIC_API_KEY is not set")
+func NewBedrockLLMForwarder(l logger.Logger) LLMForwarder {
+	bed, err := NewBedrock(l)
+	if err != nil {
+		l.Error("failed to create bedrock client: %v", err)
+		panic(err)
 	}
-
-	return AnthropicLLMForwarder{
-		anthropic: NewAnthropic(l, token),
+	return BedrockLLMForwarder{
+		Bedrock: bed,
 	}
 }
 
-func (a AnthropicLLMForwarder) StartForward(input StartCompletionInput) ([]LLMMessage, error) {
+func (a BedrockLLMForwarder) StartForward(input StartCompletionInput) ([]LLMMessage, error) {
 	var history []LLMMessage
 	params, initialHistory := a.createParams(input)
+
 	history = append(history, initialHistory...)
 
-	a.anthropic.logger.Info(logger.Green(fmt.Sprintf("model: %s, sending message...\n", input.Model)))
-	a.anthropic.logger.Debug("system prompt:\n%s\n", input.SystemPrompt)
-	a.anthropic.logger.Debug("user prompt:\n%s\n", input.StartUserPrompt)
-	resp, err := a.anthropic.Messages.Create(context.TODO(), params)
+	a.Bedrock.logger.Info(logger.Green(fmt.Sprintf("model: %s, sending message...\n", input.Model)))
+	a.Bedrock.logger.Debug("system prompt:\n%s\n", input.SystemPrompt)
+	a.Bedrock.logger.Debug("user prompt:\n%s\n", input.StartUserPrompt)
+	resp, err := a.Bedrock.Messages.Create(context.TODO(), params)
 	if err != nil {
 		return nil, err
 	}
@@ -65,13 +65,13 @@ func (a AnthropicLLMForwarder) StartForward(input StartCompletionInput) ([]LLMMe
 		ReturnedToolCalls: toolCalls,
 	})
 
-	a.anthropic.logger.Info(logger.Yellow("returned messages:\n"))
+	a.Bedrock.logger.Info(logger.Yellow("returned messages:\n"))
 	a.showDebugMessage(history[len(history)-1])
 
 	return history, nil
 }
 
-func (a AnthropicLLMForwarder) ForwardLLM(
+func (a BedrockLLMForwarder) ForwardLLM(
 	_ context.Context,
 	input StartCompletionInput,
 	llmContexts []step.ReturnToLLMContext,
@@ -171,10 +171,10 @@ func (a AnthropicLLMForwarder) ForwardLLM(
 		"content": content,
 	})
 
-	a.anthropic.logger.Info(logger.Green(fmt.Sprintf("model: %s, sending message...\n", input.Model)))
-	a.anthropic.logger.Debug("%s\n", newMsg.RawContent)
+	a.Bedrock.logger.Info(logger.Green(fmt.Sprintf("model: %s, sending message...\n", input.Model)))
+	a.Bedrock.logger.Debug("%s\n", newMsg.RawContent)
 
-	resp, err := a.anthropic.Messages.Create(context.TODO(), params)
+	resp, err := a.Bedrock.Messages.Create(context.TODO(), params)
 	if err != nil {
 		return nil, err
 	}
@@ -207,14 +207,14 @@ func (a AnthropicLLMForwarder) ForwardLLM(
 		ReturnedToolCalls: toolCalls,
 	})
 
-	a.anthropic.logger.Info(logger.Yellow("returned messages:\n"))
+	a.Bedrock.logger.Info(logger.Yellow("returned messages:\n"))
 	a.showDebugMessage(history[len(history)-1])
 
 	return history, nil
 }
 
 // TODO: refactor with openai forwarder
-func (a AnthropicLLMForwarder) ForwardStep(_ context.Context, history []LLMMessage) step.Step {
+func (a BedrockLLMForwarder) ForwardStep(_ context.Context, history []LLMMessage) step.Step {
 	lastMsg := history[len(history)-1]
 
 	switch lastMsg.FinishReason {
@@ -237,7 +237,7 @@ func (a AnthropicLLMForwarder) ForwardStep(_ context.Context, history []LLMMessa
 	return step.NewUnknownStep()
 }
 
-func (a AnthropicLLMForwarder) createParams(input StartCompletionInput) (J, []LLMMessage) {
+func (a BedrockLLMForwarder) createParams(input StartCompletionInput) (J, []LLMMessage) {
 	tools := make([]J, len(input.Functions))
 
 	for i, f := range input.Functions {
@@ -249,15 +249,16 @@ func (a AnthropicLLMForwarder) createParams(input StartCompletionInput) (J, []LL
 	}
 
 	body := J{
-		"model":  input.Model,
+		"anthropic_version": "bedrock-2023-05-31",
+
 		"system": input.SystemPrompt,
 		"messages": []J{
 			{"role": "user", "content": input.StartUserPrompt},
 		},
 		"temperature": 0.0,
 		"tool_choice": J{
-			"type":                      "auto",
-			"disable_parallel_tool_use": true,
+			"type": "auto",
+			//"disable_parallel_tool_use": true,
 		},
 		"tools":      tools,
 		"max_tokens": 8192, // TODO: max_tokens
@@ -271,30 +272,14 @@ func (a AnthropicLLMForwarder) createParams(input StartCompletionInput) (J, []LL
 	}
 }
 
-// TODO: refactor to shared multi models
-func convertAnthoropicStopReasonToReason(reason string) MessageFinishReason {
-	switch reason {
-	case "end_turn":
-		return FinishStop
-	case "max_tokens":
-		return FinishLengthOver
-	case "stop_sequence":
-		return FinishStop
-	case "too_use":
-		return FinishToolCalls
-	default:
-		return FinishToolCalls
-	}
-}
-
 // TODO: refactor with openai debugging
-func (a AnthropicLLMForwarder) showDebugMessage(m LLMMessage) {
-	a.anthropic.logger.Debug(fmt.Sprintf("finish_reason: %s, role: %s, message.content: %s\n",
+func (a BedrockLLMForwarder) showDebugMessage(m LLMMessage) {
+	a.Bedrock.logger.Debug(fmt.Sprintf("finish_reason: %s, role: %s, message.content: %s\n",
 		m.FinishReason, m.Role, m.RawContent,
 	))
-	a.anthropic.logger.Debug("tools:\n")
+	a.Bedrock.logger.Debug("tools:\n")
 	for _, t := range m.ReturnedToolCalls {
-		a.anthropic.logger.Debug(fmt.Sprintf("id: %s, function_name:%s, function_args:%s\n",
+		a.Bedrock.logger.Debug(fmt.Sprintf("id: %s, function_name:%s, function_args:%s\n",
 			t.ToolCallerID, t.ToolName, t.Argument))
 	}
 }
