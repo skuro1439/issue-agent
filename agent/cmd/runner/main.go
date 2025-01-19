@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -10,6 +11,8 @@ import (
 	"slices"
 	"strings"
 	"syscall"
+
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 
 	"github.com/clover0/issue-agent/cli"
 	"github.com/clover0/issue-agent/config"
@@ -41,6 +44,21 @@ func main() {
 		panic(err)
 	}
 
+	flags, err := parseArgs()
+	if err != nil {
+		panic(err)
+	}
+
+	var awsDockerEnvs []string
+	if flags.Common.AWSProfile != "" {
+		awsKeys := getAWSKeys(flags.Common.AWSProfile)
+		fmt.Println("Using AWS credentials from profile:", flags.Common.AWSProfile)
+		awsDockerEnvs = append(awsDockerEnvs, "-e", "AWS_REGION="+awsKeys.Region)
+		awsDockerEnvs = append(awsDockerEnvs, "-e", "AWS_ACCESS_KEY_ID="+awsKeys.AccessKeyID)
+		awsDockerEnvs = append(awsDockerEnvs, "-e", "AWS_SECRET_ACCESS_KEY="+awsKeys.SecretAccessKey)
+		awsDockerEnvs = append(awsDockerEnvs, "-e", "AWS_SESSION_TOKEN="+awsKeys.SessionToken)
+	}
+
 	imageName := "ghcr.io/clover0/issue-agent"
 	imageTag := containerImageTag
 	dockerEnvs := passEnvs()
@@ -62,6 +80,7 @@ func main() {
 		args = append(args, "-v", path+":"+config.PromptFilePath)
 	}
 	args = append(args, dockerEnvs...)
+	args = append(args, awsDockerEnvs...)
 	args = append(args, imageName+":"+imageTag)
 	args = append(args, os.Args[1:]...)
 	for _, a := range os.Args[1:] {
@@ -99,6 +118,31 @@ func main() {
 			fmt.Printf("Process exited with error: %v\n", err)
 		}
 	}
+}
+
+func parseArgs() (*cli.IssueInputs, error) {
+	flags, mapper := cli.IssueFlags()
+
+	start := 1
+	for i, arg := range os.Args {
+		if strings.HasPrefix(arg, "-") {
+			start = i
+			break
+		}
+	}
+
+	buf := bytes.NewBuffer([]byte{})
+	flags.SetOutput(buf)
+
+	if err := flags.Parse(os.Args[start:]); err != nil {
+		if strings.Contains(err.Error(), "flag provided but not defined") {
+			// pass to the next starting container
+			fmt.Printf("Parsed input: %v\n", mapper)
+		}
+		return mapper, fmt.Errorf("failed to parse input: %w", err)
+	}
+
+	return mapper, nil
 }
 
 func dockerCmd() string {
@@ -176,4 +220,41 @@ func passEnvs() []string {
 	}
 
 	return dockerEnvs
+}
+
+type awsCredentials struct {
+	Region          string
+	AccessKeyID     string
+	SecretAccessKey string
+	SessionToken    string
+}
+
+func getAWSKeys(profile string) awsCredentials {
+	ctx := context.Background()
+
+	var opts []func(*awsconfig.LoadOptions) error
+	if profile != "" {
+		opts = append(opts, awsconfig.WithSharedConfigProfile(profile))
+	}
+
+	sdkConfig, err := awsconfig.LoadDefaultConfig(ctx, opts...)
+	if err != nil {
+		fmt.Println("Couldn't load default configuration. Have you set up your AWS account?")
+		fmt.Println(err)
+		return awsCredentials{}
+	}
+
+	cred, err := sdkConfig.Credentials.Retrieve(ctx)
+	if err != nil {
+		fmt.Println("Couldn't retrieve credentials")
+		fmt.Println(err)
+		return awsCredentials{}
+	}
+
+	return awsCredentials{
+		Region:          sdkConfig.Region,
+		AccessKeyID:     cred.AccessKeyID,
+		SecretAccessKey: cred.SecretAccessKey,
+		SessionToken:    cred.SessionToken,
+	}
 }

@@ -1,5 +1,5 @@
 <p align="center">
-  <h3 align="center">Issue Agent</h3>
+  <h1 align="center">Issue Agent</h1>
   <p align="center">AI Agents that solve simple issue quickly</p>
 </p>
 
@@ -28,3 +28,6 @@ The following models are supported.
   - gpt-4o-mini
 - Anthropic models
   - claude-3-5-sonnet
+- AWS Bedrock Claude models
+  - claude-3-5-sonnet v2 (ModelID = anthropic.claude-3-5-sonnet-20241022-v2:0)
+  - claude-3-5-sonnet v1 (ModelID = anthropic.claude-3-5-sonnet-20240620-v1:0)

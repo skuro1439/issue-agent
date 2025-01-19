@@ -17,6 +17,7 @@ type IssueInputs struct {
 	FromFile          string
 }
 
+// TODO: refactor to be common flags
 func IssueFlags() (*flag.FlagSet, *IssueInputs) {
 	flagMapper := &IssueInputs{
 		Common: &CommonInput{},
