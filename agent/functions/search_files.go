@@ -14,15 +14,15 @@ const FuncSearchFiles = "search_files"
 func InitSearchFilesFunction() Function {
 	f := Function{
 		Name: FuncSearchFiles,
-		Description: `Search for files containing the specified pattern recursively traverse directories.
-Returns a list of file names`,
+		Description: `Search for files containing specific keyword (e.g., "xxx")
+within a directory path recursively`,
 		Func: SearchFiles,
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"pattern": map[string]interface{}{
+				"keyword": map[string]interface{}{
 					"type":        "string",
-					"description": "The pattern to search for",
+					"description": "The keyword to search for.",
 				},
 				"path": map[string]interface{}{
 					"type":        "string",
