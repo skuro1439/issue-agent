@@ -8,3 +8,7 @@ linters:
     - staticcheck
     - typecheck
     - unused
+    - copyloopvar
+    # - forbidigo
+    # - funlen
+    # - godot
