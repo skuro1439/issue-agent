@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/google/go-github/v66/github"
+
 	"github.com/clover0/issue-agent/config"
 	"github.com/clover0/issue-agent/functions"
 	"github.com/clover0/issue-agent/functions/agithub"
 	"github.com/clover0/issue-agent/logger"
-	"github.com/google/go-github/v66/github"
 )
 
 func main() {
