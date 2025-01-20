@@ -39,6 +39,7 @@ agents:
       * You can't use shell executions. Only function_calling can be used
       * Cannot handle files larger than 150KB
       * Use only the standard library of the programming language or libraries used in the project
+      * You cannot write comments in the code
       </constraints>
 
       <important>

@@ -3,6 +3,7 @@ package functions
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/clover0/issue-agent/store"
 )
@@ -12,8 +13,8 @@ const FuncModifyFile = "modify_file"
 func InitModifyFileFunction() Function {
 	f := Function{
 		Name: FuncModifyFile,
-		Description: `Modify the file at output_path with the contents of content_text.
-Modified file must be full content including modified content`,
+		Description: strings.ReplaceAll(`Modify the file at output_path with the contents of content_text.
+ Modified file must be full content including modified content`, "\n", ""),
 		Func: ModifyFile,
 		Parameters: map[string]interface{}{
 			"type": "object",

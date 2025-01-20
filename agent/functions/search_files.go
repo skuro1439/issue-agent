@@ -14,15 +14,15 @@ const FuncSearchFiles = "search_files"
 func InitSearchFilesFunction() Function {
 	f := Function{
 		Name: FuncSearchFiles,
-		Description: `Search for files containing the specified pattern recursively traverse directories.
-Returns a list of file names`,
+		Description: strings.ReplaceAll(`Search for files containing specific keyword (e.g., "xxx")
+ within a directory path recursively`, "\n", ""),
 		Func: SearchFiles,
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"pattern": map[string]interface{}{
+				"keyword": map[string]interface{}{
 					"type":        "string",
-					"description": "The pattern to search for",
+					"description": "The keyword to search for.",
 				},
 				"path": map[string]interface{}{
 					"type":        "string",
@@ -64,9 +64,9 @@ func SearchFiles(input SearchFilesInput) ([]string, error) {
 			return nil
 		}
 
-		f, err := os.Open(path)
-		if err != nil {
-			return fmt.Errorf("failed to open file: %w", err)
+		f, fileErr := os.Open(path)
+		if fileErr != nil {
+			return fmt.Errorf("failed to open file: %w", fileErr)
 		}
 		defer f.Close()
 

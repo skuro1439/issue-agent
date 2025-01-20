@@ -40,7 +40,7 @@ func InitializeFunctions(
 	if allowFunction(allowFunctions, FuncGetWebPageFromURL) {
 		InitFuncGetWebPageFromURLFunction()
 	}
-	if allowFunction(allowFunctions, FuncGetPullRequestDiff) {
+	if allowFunction(allowFunctions, FuncGetPullRequest) {
 		InitGetPullRequestFunction(repoService)
 	}
 	if allowFunction(allowFunctions, FuncSearchFiles) {
@@ -81,7 +81,7 @@ func FunctionByName(name string) (Function, error) {
 		return f, nil
 	}
 
-	return Function{}, errors.New(fmt.Sprintf("%s does not exist in functions", name))
+	return Function{}, fmt.Errorf("%s does not exist in functions", name)
 }
 
 // AllFunctions returns all functions
@@ -210,17 +210,22 @@ func ExecFunction(l logger.Logger, store *libstore.Store, funcName FuncName, arg
 		}
 		return r, nil
 
-	case FuncGetPullRequestDiff:
-		l.Info("functions: do %s\n", FuncGetPullRequestDiff)
-		input := GetPullRequestDiffInput{}
+	case FuncGetPullRequest:
+		l.Info("functions: do %s\n", FuncGetPullRequest)
+		input := GetPullRequestInput{}
 		if err := marshalFuncArgs(argsJson, &input); err != nil {
 			return "", fmt.Errorf("failed to unmarshal args: %w", err)
 		}
-		fn, ok := functionsMap[FuncGetPullRequestDiff].Func.(GetPullRequestDiffType)
+		fn, ok := functionsMap[FuncGetPullRequest].Func.(GetPullRequestType)
 		if !ok {
-			return "", fmt.Errorf("cat not call %s function", FuncGetPullRequestDiff)
+			return "", fmt.Errorf("cat not call %s function", FuncGetPullRequest)
 		}
-		return fn(input)
+		r, err := fn(input)
+		if err != nil {
+			return "", err
+		}
+		return r.ToLLMString(), nil
+
 	case FuncSearchFiles:
 		l.Info("functions: do %s\n", FuncSearchFiles)
 		input := SearchFilesInput{}

@@ -60,7 +60,7 @@ func (a *Agent) Work() (lastOutput string, err error) {
 		Functions:       functions.AllFunctions(),
 	}
 
-	a.logg.Info(logger.Green(fmt.Sprintf("[STEP]start commnuication with LLM\n")))
+	a.logg.Info(logger.Green("[STEP]start commnuication with LLM\n"))
 	history, err := a.llmForwarder.StartForward(completionInput)
 	if err != nil {
 		return lastOutput, fmt.Errorf("start llm forward error: %w", err)
@@ -106,7 +106,7 @@ func (a *Agent) Work() (lastOutput string, err error) {
 			a.currentStep = step.NewReturnToLLMStep(input)
 
 		case step.ReturnToLLM:
-			a.logg.Info(logger.Green(fmt.Sprintf("[STEP]forwarding message to LLM and waiting for response\n")))
+			a.logg.Info(logger.Green("[STEP]forwarding message to LLM and waiting for response\n"))
 			history, err = a.llmForwarder.ForwardLLM(ctx, completionInput, a.currentStep.ReturnToLLMContexts, history)
 			if err != nil {
 				a.logg.Error("unrecoverable ContinueCompletion: %s\n", err)
@@ -119,7 +119,6 @@ func (a *Agent) Work() (lastOutput string, err error) {
 			a.logg.Info("[STEP]finish instructions\n")
 			lastOutput = a.currentStep.LastOutput
 			loop = false
-			break
 
 		case step.Unrecoverable, step.Unknown:
 			a.logg.Error("unrecoverable error: %s\n", a.currentStep.UnrecoverableErr)

@@ -1,4 +1,4 @@
-name: Run Go Tests
+name: Develop
 
 on:
   push:
@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
+  checks: write
 
 defaults:
   run:
@@ -17,6 +19,7 @@ defaults:
 
 jobs:
   test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -30,3 +33,19 @@ jobs:
 
       - name: Run tests
         run: make run/test
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # 5.2.0
+        with:
+          go-version: 1.23
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@ec5d18412c0aeab7936cb16880d708ba2a64e1ae # v6.2.0
+        with:
+          version: v1.60
+          working-directory: ./agent

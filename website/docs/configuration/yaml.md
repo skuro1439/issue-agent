@@ -59,7 +59,7 @@ agent:
   # Allow agent to use function.
   # Belows are the default functions.
   allow_functions:
-    - get_pull_request_diff
+    - get_pull_request
     #- get_web_page_from_url
     #- get_web_search_result
     - list_files
@@ -69,11 +69,3 @@ agent:
     - submit_files
     - search_files
 ```
-
-## Models
-
-- OpenAI models
-    - gpt-4o
-    - gpt-4o-mini
-- Anthropic models
-    - claude-3-5-sonnet ⭐️ Recommended!

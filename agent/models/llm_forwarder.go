@@ -52,15 +52,15 @@ type MessageRole string
 
 const (
 	LLMAssistant MessageRole = "assistant"
-	LLMUser                  = "user"
-	LLMSystem                = "system"
-	LLMTool                  = "tool"
+	LLMUser      MessageRole = "user"
+	LLMSystem    MessageRole = "system"
+	LLMTool      MessageRole = "tool"
 )
 
 type MessageFinishReason string
 
 const (
 	FinishStop       MessageFinishReason = "stop"
-	FinishToolCalls                      = "toolCalls"
-	FinishLengthOver                     = "lengthOver"
+	FinishToolCalls  MessageFinishReason = "toolCalls"
+	FinishLengthOver MessageFinishReason = "lengthOver"
 )

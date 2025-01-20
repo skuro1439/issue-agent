@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-github/v66/github"
 
+	"github.com/clover0/issue-agent/functions"
 	"github.com/clover0/issue-agent/logger"
 )
 
@@ -31,17 +32,25 @@ func NewGitHubService(
 	}
 }
 
-func (s GitHubService) GetPullRequestDiff(prNumber string) (string, error) {
+func (s GitHubService) GetPullRequest(prNumber string) (functions.GetPullRequestOutput, error) {
 	number, err := strconv.Atoi(prNumber)
 	if err != nil {
-		return "", fmt.Errorf("failed to convert pull request number to int: %w", err)
+		return functions.GetPullRequestOutput{}, fmt.Errorf("failed to convert pull request number to int: %w", err)
 	}
 
 	c := context.Background()
+	pr, _, err := s.client.PullRequests.Get(c, s.owner, s.repository, number)
+	if err != nil {
+		return functions.GetPullRequestOutput{}, fmt.Errorf("failed to get pull request: %w", err)
+	}
 	diff, _, err := s.client.PullRequests.GetRaw(c, s.owner, s.repository, number, github.RawOptions{Type: github.Diff})
 	if err != nil {
-		return "", fmt.Errorf("failed to get pull request diff: %w", err)
+		return functions.GetPullRequestOutput{}, fmt.Errorf("failed to get pull request diff: %w", err)
 	}
 
-	return diff, nil
+	return functions.GetPullRequestOutput{
+		RawDiff: diff,
+		Title:   pr.GetTitle(),
+		Content: pr.GetBody(),
+	}, nil
 }

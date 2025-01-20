@@ -41,6 +41,8 @@ nav:
   - Configuration:
       - Command: configuration/command.md
       - YAML: configuration/yaml.md
+      - Models: configuration/models.md
+      - Functions: configuration/functions.md
 
 plugins:
   - minify:

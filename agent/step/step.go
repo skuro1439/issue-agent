@@ -99,11 +99,7 @@ type ReturnToLLMInput struct {
 func NewReturnToLLMStep(input []ReturnToLLMInput) Step {
 	var contexts []ReturnToLLMContext
 	for _, v := range input {
-		contexts = append(contexts, ReturnToLLMContext{
-			ToolCallerID: v.ToolCallerID,
-			ToolName:     v.ToolName,
-			Content:      v.Content,
-		})
+		contexts = append(contexts, ReturnToLLMContext(v))
 	}
 	return Step{
 		Do:                  ReturnToLLM,
