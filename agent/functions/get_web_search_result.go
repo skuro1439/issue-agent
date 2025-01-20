@@ -17,8 +17,8 @@ const ddgBaseURL = "https://html.duckduckgo.com/html"
 func InitGetWebSearchResult() Function {
 	f := Function{
 		Name: FuncGetWebSearchResult,
-		Description: `Get a list of results from an Internet search conducted with keywords.
-You should get the page information from the url of the result next.`,
+		Description: strings.ReplaceAll(`Get a list of results from an Internet search conducted with keywords.
+ You should get the page information from the url of the result next.`, "\n", ""),
 		Func: GetWebSearchResult,
 		Parameters: map[string]interface{}{
 			"type": "object",

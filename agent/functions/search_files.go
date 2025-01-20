@@ -14,8 +14,8 @@ const FuncSearchFiles = "search_files"
 func InitSearchFilesFunction() Function {
 	f := Function{
 		Name: FuncSearchFiles,
-		Description: `Search for files containing specific keyword (e.g., "xxx")
-within a directory path recursively`,
+		Description: strings.ReplaceAll(`Search for files containing specific keyword (e.g., "xxx")
+ within a directory path recursively`, "\n", ""),
 		Func: SearchFiles,
 		Parameters: map[string]interface{}{
 			"type": "object",
