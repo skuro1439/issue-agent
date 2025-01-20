@@ -64,9 +64,9 @@ func SearchFiles(input SearchFilesInput) ([]string, error) {
 			return nil
 		}
 
-		f, err := os.Open(path)
-		if err != nil {
-			return fmt.Errorf("failed to open file: %w", err)
+		f, fileErr := os.Open(path)
+		if fileErr != nil {
+			return fmt.Errorf("failed to open file: %w", fileErr)
 		}
 		defer f.Close()
 

@@ -49,7 +49,7 @@ func GetWebSearchResult(input GetWebSearchResultInput) (_ string, err error) {
 	}
 
 	param := url.Values{}
-	param.Set("q", fmt.Sprintf("%s", input.Keyword))
+	param.Set("q", input.Keyword)
 	payload := bytes.NewBufferString(param.Encode())
 	req, err := http.NewRequest(http.MethodPost, u.String(), payload)
 	if err != nil {

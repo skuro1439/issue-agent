@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -15,9 +14,8 @@ import (
 )
 
 type BedrockClient struct {
-	client  *bedrockruntime.Client
-	logger  logger.Logger
-	baseURL *url.URL
+	client *bedrockruntime.Client
+	logger logger.Logger
 
 	// services
 	Messages *BedrockMessageService

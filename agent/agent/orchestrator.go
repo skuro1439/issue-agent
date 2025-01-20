@@ -283,10 +283,6 @@ func ReviewManagerAgent(
 	dataStore *store.Store,
 	llmForwarder models.LLMForwarder,
 ) (Agent, error) {
-	var changedFilePath []string
-	for _, f := range changedFiles {
-		changedFilePath = append(changedFilePath, f.Path)
-	}
 	ag := NewAgent(
 		parameter,
 		"reviewManagerAgent",

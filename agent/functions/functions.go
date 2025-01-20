@@ -81,7 +81,7 @@ func FunctionByName(name string) (Function, error) {
 		return f, nil
 	}
 
-	return Function{}, errors.New(fmt.Sprintf("%s does not exist in functions", name))
+	return Function{}, fmt.Errorf("%s does not exist in functions", name)
 }
 
 // AllFunctions returns all functions

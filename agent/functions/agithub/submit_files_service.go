@@ -66,7 +66,7 @@ func (s SubmitFileGitHubService) Caller(
 			return submitFileOut, errorf("git config email error: %w", err)
 		}
 
-		out, err = agit.GitStatus(s.logger)
+		_, err = agit.GitStatus(s.logger)
 		if err != nil {
 			return submitFileOut, errorf("git status error: %w", err)
 		}

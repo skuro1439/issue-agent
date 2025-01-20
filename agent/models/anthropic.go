@@ -57,7 +57,7 @@ func (r roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 func (c *AnthropicClient) NewRequest(method string, path string, body interface{}) (*http.Request, error) {
 	u, err := c.baseURL.Parse(path)
 	if err != nil {
-
+		return nil, fmt.Errorf("failed to parse URL: %w", err)
 	}
 
 	b, err := json.Marshal(body)
