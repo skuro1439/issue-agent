@@ -153,7 +153,7 @@ func setDefaults(conf Config) Config {
 	if len(conf.Agent.AllowFunctions) == 0 {
 		conf.Agent.AllowFunctions = []string{
 			"submit_files",
-			"get_pull_request_diff",
+			"get_pull_request",
 			// "get_web_page_from_url",
 			// "get_web_search_result",
 			"list_files",
