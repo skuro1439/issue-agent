@@ -1,5 +1,8 @@
 package models
 
+// TODO: make no open-ai dependency
+// The openai-go library is too large for the purposes of this project.
+
 import (
 	"context"
 	"errors"
