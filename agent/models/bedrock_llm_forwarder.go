@@ -5,9 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
+	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/document"
+	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
+	"github.com/aws/smithy-go/ptr"
+
 	"github.com/clover0/issue-agent/logger"
 	"github.com/clover0/issue-agent/step"
 )
+
+// TODO: refactor using ptr package
 
 type BedrockLLMForwarder struct {
 	Bedrock BedrockClient
@@ -26,44 +33,29 @@ func NewBedrockLLMForwarder(l logger.Logger) LLMForwarder {
 
 func (a BedrockLLMForwarder) StartForward(input StartCompletionInput) ([]LLMMessage, error) {
 	var history []LLMMessage
-	params, initialHistory := a.createParams(input)
+	initMsg, toolSpecs, initialHistory := a.buildStartParams(input)
 
 	history = append(history, initialHistory...)
 
 	a.Bedrock.logger.Info(logger.Green(fmt.Sprintf("model: %s, sending message...\n", input.Model)))
 	a.Bedrock.logger.Debug("system prompt:\n%s\n", input.SystemPrompt)
 	a.Bedrock.logger.Debug("user prompt:\n%s\n", input.StartUserPrompt)
-	resp, err := a.Bedrock.Messages.Create(context.TODO(), params)
+	resp, err := a.Bedrock.Messages.Create(context.TODO(),
+		input.Model,
+		input.SystemPrompt,
+		initMsg,
+		toolSpecs,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	var toolCalls []ToolCall
-	var text string
-	for _, cont := range resp.Content {
-		// discard text
-		if cont.Type == "text" {
-			text = cont.Text
-			continue
-		}
-		if cont.Type == "tool_use" {
-			j, err := json.Marshal(cont.Input)
-			if err != nil {
-				return nil, err
-			}
-			toolCalls = append(toolCalls, ToolCall{
-				ToolCallerID: cont.ID,
-				ToolName:     cont.Name,
-				Argument:     string(j),
-			})
-		}
+	assistantHist, err := a.buildAssistantHistory(*resp)
+	if err != nil {
+		return nil, err
 	}
-	history = append(history, LLMMessage{
-		Role:              LLMAssistant,
-		FinishReason:      convertAnthoropicStopReasonToReason(resp.StopReason),
-		RawContent:        text,
-		ReturnedToolCalls: toolCalls,
-	})
+
+	history = append(history, assistantHist)
 
 	a.Bedrock.logger.Info(logger.Yellow("returned messages:\n"))
 	a.showDebugMessage(history[len(history)-1])
@@ -77,75 +69,75 @@ func (a BedrockLLMForwarder) ForwardLLM(
 	llmContexts []step.ReturnToLLMContext,
 	history []LLMMessage,
 ) ([]LLMMessage, error) {
-	params, _ := a.createParams(input)
+	_, toolSpecs, _ := a.buildStartParams(input)
 
 	// reset message
-	params["messages"] = make([]J, 0)
+	var messages []types.Message
 
 	// build message from history
 	for _, h := range history {
+		var msg types.Message
+
 		switch h.Role {
 		case LLMAssistant:
+			msg.Role = types.ConversationRoleAssistant
 			if len(h.ReturnedToolCalls) > 0 {
-				content := make([]J, 0)
 				for _, v := range h.ReturnedToolCalls {
-					var input map[string]any
-					if err := json.Unmarshal([]byte(v.Argument), &input); err != nil {
+					var inputMap map[string]any
+					if err := json.Unmarshal([]byte(v.Argument), &inputMap); err != nil {
 						return nil, fmt.Errorf("failed to unmarshal tool argument: %w", err)
 					}
-					content = append(content, J{
-						"type": "tool_use",
-						"id":   v.ToolCallerID,
-						"name": v.ToolName,
-						// json marshal?
-						"input": input,
+					msg.Content = append(msg.Content, &types.ContentBlockMemberToolUse{
+						Value: types.ToolUseBlock{
+							ToolUseId: ptr.String(v.ToolCallerID),
+							Name:      ptr.String(v.ToolName),
+							Input:     document.NewLazyDocument(inputMap),
+						},
 					})
 				}
-				params["messages"] = append(params["messages"].([]J), J{
-					"role":    "assistant",
-					"content": content,
-				})
 			} else {
-				params["messages"] = append(params["messages"].([]J), J{
-					"role":    "assistant",
-					"content": h.RawContent,
+				msg.Content = append(msg.Content, &types.ContentBlockMemberText{
+					Value: h.RawContent,
 				})
 			}
+
 		case LLMUser:
-			params["messages"] = append(params["messages"].([]J), J{
-				"role":    "user",
-				"content": h.RawContent,
+			msg.Role = types.ConversationRoleUser
+			msg.Content = append(msg.Content, &types.ContentBlockMemberText{
+				Value: h.RawContent,
 			})
 
-		// multiple contents in 1 message
 		case LLMTool:
-			// 本来は複数のLLM Messageを1つのmessageにまとめる必要がある
-			params["messages"] = append(params["messages"].([]J), J{
-				"role": "user",
-				"content": []J{
-					{
-						"type":        "tool_result",
-						"tool_use_id": h.RespondToolCall.ToolCallerID,
-						"content":     h.RawContent,
-					},
-				},
-			})
+			msg.Role = types.ConversationRoleUser
+			toolResult := types.ToolResultBlock{
+				ToolUseId: ptr.String(h.RespondToolCall.ToolCallerID),
+			}
+			toolResult.Content = append(toolResult.Content, &types.ToolResultContentBlockMemberText{Value: h.RawContent})
+			msg.Content = append(msg.Content, &types.ContentBlockMemberToolResult{Value: toolResult})
+
 		default:
 			return nil, fmt.Errorf("unknown role: %s", h.Role)
 		}
+
+		messages = append(messages, msg)
 	}
 
 	// new message
 	var newMsg LLMMessage
-	content := make([]J, len(llmContexts))
+	content := make([]types.ContentBlock, len(llmContexts))
 	for i, v := range llmContexts {
+		// only one content ?
 		if v.ToolCallerID != "" {
-			content[i] = J{
-				"type":        "tool_result",
-				"tool_use_id": v.ToolCallerID,
-				"content":     v.Content,
+			content[i] = &types.ContentBlockMemberToolResult{
+				Value: types.ToolResultBlock{
+					ToolUseId: ptr.String(v.ToolCallerID),
+					Content: []types.ToolResultContentBlock{
+						&types.ToolResultContentBlockMemberText{
+							Value: v.Content,
+						},
+					},
+				},
 			}
-
 			newMsg = LLMMessage{
 				Role:       LLMTool,
 				RawContent: v.Content,
@@ -155,57 +147,41 @@ func (a BedrockLLMForwarder) ForwardLLM(
 				},
 			}
 		} else {
-			params["messages"] = append(params["messages"].([]J), J{
-				"role":    "user",
-				"content": v.Content,
-			})
+			content[i] = &types.ContentBlockMemberText{
+				Value: v.Content,
+			}
 			newMsg = LLMMessage{
 				Role:       LLMUser,
 				RawContent: v.Content,
 			}
 		}
+
 		history = append(history, newMsg)
 	}
-	params["messages"] = append(params["messages"].([]J), J{
-		"role":    "user",
-		"content": content,
+
+	messages = append(messages, types.Message{
+		Role:    types.ConversationRoleUser,
+		Content: content,
 	})
 
 	a.Bedrock.logger.Info(logger.Green(fmt.Sprintf("model: %s, sending message...\n", input.Model)))
 	a.Bedrock.logger.Debug("%s\n", newMsg.RawContent)
 
-	resp, err := a.Bedrock.Messages.Create(context.TODO(), params)
+	resp, err := a.Bedrock.Messages.Create(
+		context.TODO(),
+		input.Model,
+		input.SystemPrompt,
+		messages,
+		toolSpecs)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: refactor with StartForward
-	var toolCalls []ToolCall
-	var text string
-	for _, cont := range resp.Content {
-		// assumption of only 1 text per content
-		if cont.Type == "text" {
-			text = cont.Text
-			continue
-		}
-		if cont.Type == "tool_use" {
-			j, err := json.Marshal(cont.Input)
-			if err != nil {
-				return nil, err
-			}
-			toolCalls = append(toolCalls, ToolCall{
-				ToolCallerID: cont.ID,
-				ToolName:     cont.Name,
-				Argument:     string(j),
-			})
-		}
+	assistantHist, err := a.buildAssistantHistory(*resp)
+	if err != nil {
+		return nil, err
 	}
-	history = append(history, LLMMessage{
-		Role:              LLMAssistant,
-		FinishReason:      convertAnthoropicStopReasonToReason(resp.StopReason),
-		RawContent:        text,
-		ReturnedToolCalls: toolCalls,
-	})
+	history = append(history, assistantHist)
 
 	a.Bedrock.logger.Info(logger.Yellow("returned messages:\n"))
 	a.showDebugMessage(history[len(history)-1])
@@ -237,38 +213,84 @@ func (a BedrockLLMForwarder) ForwardStep(_ context.Context, history []LLMMessage
 	return step.NewUnknownStep()
 }
 
-func (a BedrockLLMForwarder) createParams(input StartCompletionInput) (J, []LLMMessage) {
-	tools := make([]J, len(input.Functions))
-
-	for i, f := range input.Functions {
-		tools[i] = J{
-			"name":         f.Name,
-			"description":  f.Description,
-			"input_schema": f.Parameters,
+func (a BedrockLLMForwarder) buildAssistantHistory(bedrockResp bedrockruntime.ConverseOutput) (LLMMessage, error) {
+	respMessage, ok := bedrockResp.Output.(*types.ConverseOutputMemberMessage)
+	if !ok {
+		return LLMMessage{}, fmt.Errorf("failed to convert output to message")
+	}
+	var toolCalls []ToolCall
+	var text string
+	for _, cont := range respMessage.Value.Content {
+		switch c := cont.(type) {
+		case *types.ContentBlockMemberText:
+			text = c.Value
+		case *types.ContentBlockMemberToolUse:
+			doc, err := c.Value.Input.MarshalSmithyDocument()
+			if err != nil {
+				return LLMMessage{}, fmt.Errorf("failed to unmarshal tool argument: %w", err)
+			}
+			toolCalls = append(toolCalls, ToolCall{
+				ToolCallerID: *c.Value.ToolUseId,
+				ToolName:     *c.Value.Name,
+				Argument:     string(doc),
+			})
+		default:
+			return LLMMessage{}, fmt.Errorf("unknown content type: %T", c)
 		}
 	}
 
-	body := J{
-		"anthropic_version": "bedrock-2023-05-31",
+	return LLMMessage{
+		Role:              LLMAssistant,
+		FinishReason:      convertBedrockStopReasonToReason(bedrockResp.StopReason),
+		RawContent:        text,
+		ReturnedToolCalls: toolCalls,
+	}, nil
+}
 
-		"system": input.SystemPrompt,
-		"messages": []J{
-			{"role": "user", "content": input.StartUserPrompt},
-		},
-		"temperature": 0.0,
-		"tool_choice": J{
-			"type": "auto",
-			//"disable_parallel_tool_use": true,
-		},
-		"tools":      tools,
-		"max_tokens": 8192, // TODO: max_tokens
+// TODO: refactor rename
+func (a BedrockLLMForwarder) buildStartParams(input StartCompletionInput) ([]types.Message, []*types.ToolMemberToolSpec, []LLMMessage) {
+	var messages []types.Message
+	tools := make([]*types.ToolMemberToolSpec, len(input.Functions))
+
+	for i, f := range input.Functions {
+		tools[i] = &types.ToolMemberToolSpec{
+			Value: types.ToolSpecification{
+				Name:        ptr.String(f.Name.String()),
+				Description: ptr.String(f.Description),
+				InputSchema: &types.ToolInputSchemaMemberJson{
+					Value: document.NewLazyDocument(f.Parameters),
+				},
+			},
+		}
 	}
 
-	return body, []LLMMessage{
+	messages = append(messages, types.Message{
+		Role: types.ConversationRoleUser,
+		Content: []types.ContentBlock{
+			&types.ContentBlockMemberText{
+				Value: input.StartUserPrompt,
+			},
+		},
+	})
+
+	return messages, tools, []LLMMessage{
 		{
 			Role:       LLMUser,
 			RawContent: input.StartUserPrompt,
 		},
+	}
+}
+
+func convertBedrockStopReasonToReason(reason types.StopReason) MessageFinishReason {
+	switch reason {
+	case types.StopReasonEndTurn:
+		return FinishStop
+	case types.StopReasonToolUse:
+		return FinishToolCalls
+	case types.StopReasonMaxTokens:
+		return FinishLengthOver
+	default:
+		panic(fmt.Sprintf("unknown finish reason: %s", reason))
 	}
 }
 

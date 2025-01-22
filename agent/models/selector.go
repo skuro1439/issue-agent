@@ -8,7 +8,7 @@ import (
 )
 
 func SelectForwarder(lo logger.Logger, model string) LLMForwarder {
-	if strings.HasPrefix(model, "anthropic.claude-3-5-sonnet") {
+	if strings.Contains(model, "anthropic.claude-3-5-sonnet") {
 		return NewBedrockLLMForwarder(lo)
 	}
 	if strings.HasPrefix(model, "gpt") {
