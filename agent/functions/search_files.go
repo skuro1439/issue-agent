@@ -29,7 +29,7 @@ func InitSearchFilesFunction() Function {
 					"description": "The path to search within its directory",
 				},
 			},
-			"required":             []string{"path"},
+			"required":             []string{"keyword", "path"},
 			"additionalProperties": false,
 		},
 	}
@@ -40,7 +40,7 @@ func InitSearchFilesFunction() Function {
 }
 
 type SearchFilesInput struct {
-	Pattern string
+	Keyword string
 	Path    string
 }
 
@@ -73,7 +73,7 @@ func SearchFiles(input SearchFilesInput) ([]string, error) {
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
 			line := scanner.Text()
-			if strings.Contains(line, input.Pattern) {
+			if strings.Contains(line, input.Keyword) {
 				fileNames = append(fileNames, filepath.Clean(path))
 				break
 			}

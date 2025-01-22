@@ -16,6 +16,7 @@ import (
 
 	"github.com/clover0/issue-agent/cli"
 	"github.com/clover0/issue-agent/config"
+	"github.com/clover0/issue-agent/logger"
 )
 
 const defaultConfigPath = "./issue_agent.yml"
@@ -26,6 +27,7 @@ var containerImageTag = "dev"
 
 // Use the docker command to start a container and execute the agent binary
 func main() {
+	lo := logger.NewPrinter("info")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -44,15 +46,18 @@ func main() {
 		panic(err)
 	}
 
-	flags, err := parseArgs()
+	flags, err := parseArgs(lo)
 	if err != nil {
 		panic(err)
 	}
 
 	var awsDockerEnvs []string
 	if flags.Common.AWSProfile != "" {
-		awsKeys := getAWSKeys(flags.Common.AWSProfile)
-		fmt.Println("Using AWS credentials from profile:", flags.Common.AWSProfile)
+		awsKeys, err := getAWSKeys(flags.Common.AWSProfile, flags.Common.AWSRegion)
+		if err != nil {
+			panic(err)
+		}
+		lo.Info("using AWS credentials from %s profile\n", flags.Common.AWSProfile)
 		awsDockerEnvs = append(awsDockerEnvs, "-e", "AWS_REGION="+awsKeys.Region)
 		awsDockerEnvs = append(awsDockerEnvs, "-e", "AWS_ACCESS_KEY_ID="+awsKeys.AccessKeyID)
 		awsDockerEnvs = append(awsDockerEnvs, "-e", "AWS_SECRET_ACCESS_KEY="+awsKeys.SecretAccessKey)
@@ -95,7 +100,7 @@ func main() {
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Start(); err != nil {
-		fmt.Println("Error running container:", err)
+		lo.Info("Error running container:", err)
 		panic(err)
 	}
 
@@ -115,13 +120,13 @@ func main() {
 
 	if err := cmd.Wait(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() != 0 {
-			fmt.Printf("Process exited with error: %v\n", err)
+			lo.Info("Process exited with error: %v\n", err)
 			os.Exit(exitErr.ExitCode())
 		}
 	}
 }
 
-func parseArgs() (*cli.IssueInputs, error) {
+func parseArgs(lo logger.Logger) (*cli.IssueInputs, error) {
 	flags, mapper := cli.IssueFlags()
 
 	start := 1
@@ -138,7 +143,7 @@ func parseArgs() (*cli.IssueInputs, error) {
 	if err := flags.Parse(os.Args[start:]); err != nil {
 		if strings.Contains(err.Error(), "flag provided but not defined") {
 			// pass to the next starting container
-			fmt.Printf("Parsed input: %v\n", mapper)
+			lo.Info("Parsed input: %v\n", mapper)
 		}
 		return mapper, fmt.Errorf("failed to parse input: %w", err)
 	}
@@ -230,7 +235,7 @@ type awsCredentials struct {
 	SessionToken    string
 }
 
-func getAWSKeys(profile string) awsCredentials {
+func getAWSKeys(profile string, region string) (awsCredentials, error) {
 	ctx := context.Background()
 
 	var opts []func(*awsconfig.LoadOptions) error
@@ -240,22 +245,23 @@ func getAWSKeys(profile string) awsCredentials {
 
 	sdkConfig, err := awsconfig.LoadDefaultConfig(ctx, opts...)
 	if err != nil {
-		fmt.Println("Couldn't load default configuration. Have you set up your AWS account?")
-		fmt.Println(err)
-		return awsCredentials{}
+		return awsCredentials{}, fmt.Errorf("failed to load AWS SDK config: %w", err)
 	}
 
 	cred, err := sdkConfig.Credentials.Retrieve(ctx)
 	if err != nil {
-		fmt.Println("Couldn't retrieve credentials")
-		fmt.Println(err)
-		return awsCredentials{}
+		return awsCredentials{}, fmt.Errorf("failed to retrieve AWS credentials: %w", err)
+	}
+
+	passRegion := sdkConfig.Region
+	if region != "" {
+		passRegion = region
 	}
 
 	return awsCredentials{
-		Region:          sdkConfig.Region,
+		Region:          passRegion,
 		AccessKeyID:     cred.AccessKeyID,
 		SecretAccessKey: cred.SecretAccessKey,
 		SessionToken:    cred.SessionToken,
-	}
+	}, nil
 }

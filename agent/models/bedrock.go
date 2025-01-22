@@ -2,9 +2,11 @@ package models
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
+	"github.com/aws/smithy-go/ptr"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -45,30 +47,39 @@ type BedrockMessageService struct {
 	client *BedrockClient
 }
 
-func (s *BedrockMessageService) Create(ctx context.Context, body J) (ResponseMessage, error) {
-	b, err := json.Marshal(body)
-	if err != nil {
-		return ResponseMessage{}, fmt.Errorf("failed to marshal body: %w", err)
+type BedrockConverseMessageResponse struct {
+	Value string
+	Role  MessageRole
+}
+
+func (s *BedrockMessageService) Create(
+	ctx context.Context,
+	modelID string,
+	systemMessage string,
+	messages []types.Message,
+	toolSpecs []*types.ToolMemberToolSpec) (response *bedrockruntime.ConverseOutput, _ error) {
+	input := &bedrockruntime.ConverseInput{
+		// todo: changeable models
+		ModelId: aws.String(modelID),
+		InferenceConfig: &types.InferenceConfiguration{
+			Temperature: ptr.Float32(0),
+		},
+		System:     []types.SystemContentBlock{&types.SystemContentBlockMemberText{Value: systemMessage}},
+		Messages:   messages,
+		ToolConfig: &types.ToolConfiguration{},
+	}
+	for _, tool := range toolSpecs {
+		input.ToolConfig.Tools = append(input.ToolConfig.Tools, tool)
 	}
 
-	result, err := s.client.client.InvokeModel(ctx, &bedrockruntime.InvokeModelInput{
-		// todo: changeable models
-		ModelId:     aws.String("anthropic.claude-3-5-sonnet-20240620-v1:0"),
-		ContentType: aws.String("application/json"),
-		Body:        b,
-	})
+	result, err := s.client.client.Converse(ctx, input)
 	if err != nil {
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "provided model identifier is invalid") {
-			return ResponseMessage{}, fmt.Errorf("failed to invoke model: %w: hint - check whether enabled the model and in the AWS region", err)
+			return response, fmt.Errorf("failed to invoke model: %w: hint - check whether enabled the model and in the AWS region", err)
 		}
-		return ResponseMessage{}, fmt.Errorf("failed to invoke model: %w", err)
+		return response, fmt.Errorf("failed to invoke model: %w", err)
 	}
 
-	var message ResponseMessage
-	if err := json.Unmarshal(result.Body, &message); err != nil {
-		return message, fmt.Errorf("failed to unmarshal response body: %w", err)
-	}
-
-	return message, nil
+	return result, nil
 }
