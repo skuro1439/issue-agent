@@ -16,7 +16,7 @@ import (
 
 const CreatePrCommand = "create-pr"
 
-func CreatePRCommand(flags []string) error {
+func CreatePR(flags []string) error {
 	cliIn, err := ParseCreatePRInput(flags)
 	if err != nil {
 		return fmt.Errorf("failed to parse input: %w", err)

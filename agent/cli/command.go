@@ -25,11 +25,11 @@ func Execute() error {
 
 	lo := logger.NewPrinter("info")
 	switch command {
-	case "version":
-		return VersionCommand()
+	case VersionCommand:
+		return Version()
 	case CreatePrCommand:
-		return CreatePRCommand(others)
-	case "Help":
+		return CreatePR(others)
+	case HelpCommand:
 		Help(lo)
 		return nil
 	default:

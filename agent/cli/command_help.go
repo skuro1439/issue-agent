@@ -8,6 +8,8 @@ import (
 	"github.com/clover0/issue-agent/logger"
 )
 
+const HelpCommand = "help"
+
 func Help(lo logger.Logger) {
 	msg := `Usage
   issue-agent <command> [flags]
