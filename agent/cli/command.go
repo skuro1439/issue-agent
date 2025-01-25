@@ -23,8 +23,6 @@ func Execute() error {
 		return fmt.Errorf("failed to parse input: %w", err)
 	}
 
-	// TODO: bind common flags to common struct here
-
 	lo := logger.NewPrinter("info")
 	switch command {
 	case "version":

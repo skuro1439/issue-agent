@@ -3,6 +3,7 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"strings"
 
 	"github.com/clover0/issue-agent/logger"
 )
@@ -10,15 +11,26 @@ import (
 func Help(lo logger.Logger) {
 	msg := `Usage
   issue-agent <command> [flags]
-Commands  
-  Help: Show usage of commands and flags
+Command and Flags  
+  help: Show usage of commands and flags
   version: Show version of issue-agent CLI
 `
-	issueFlags, _ := CreatePRFlags()
+	createPRFlags, _ := CreatePRFlags()
 	msg += fmt.Sprintf("  %s:\n", CreatePrCommand)
-	issueFlags.VisitAll(func(flg *flag.Flag) {
+	createPRFlags.VisitAll(func(flg *flag.Flag) {
 		msg += fmt.Sprintf("    --%s\n", flg.Name)
-		msg += fmt.Sprintf("        %s\n", flg.Usage)
+		msg += IndentMultiLine(flg.Usage, "      ")
+		msg += "\n"
 	})
 	lo.Info(msg)
+}
+
+func IndentMultiLine(str string, indent string) string {
+	lines := strings.Split(str, "\n")
+	out := make([]string, len(lines))
+	for i, line := range lines {
+		out[i] = indent + line
+	}
+
+	return strings.Join(out, "\n")
 }
