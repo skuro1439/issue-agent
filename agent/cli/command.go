@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
@@ -32,28 +31,11 @@ func Execute() error {
 		return VersionCommand()
 	case CreatePrCommand:
 		return CreatePRCommand(others)
-	case "help":
-		help(lo)
+	case "Help":
+		Help(lo)
 		return nil
 	default:
-		help(lo)
+		Help(lo)
 		return fmt.Errorf("unknown command: %s", command)
 	}
-
-}
-
-func help(lo logger.Logger) {
-	msg := `Usage
-  issue-agent <command> [flags]
-Commands  help: Show usage of commands and flags
-  help: Show usage of commands and flags
-  version: Show version of issue-agent CLI
-`
-	issueFlags, _ := CreatePRFlags()
-	msg += fmt.Sprintf("  %s:\n", CreatePrCommand)
-	issueFlags.VisitAll(func(flg *flag.Flag) {
-		msg += fmt.Sprintf("    --%s\n", flg.Name)
-		msg += fmt.Sprintf("        %s\n", flg.Usage)
-	})
-	lo.Info(msg)
 }
