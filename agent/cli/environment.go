@@ -1,6 +1,6 @@
 package cli
 
-// Environment variable names
+// Environment variable names to pass to container from host.
 const (
 	AnthropicApiKey = "ANTHROPIC_API_KEY"
 	GithubToken     = "GITHUB_TOKEN"
