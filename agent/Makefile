@@ -22,9 +22,8 @@ build/agent:
 	mkdir -p $(dir $(DIST))
 	go build -o $(DIST) ./cmd/agent/
 
-.PHONY: test
 run/test:
-	go test ./... -v -parallel 4 -race
+	go test ./... -v -race
 
 image/dev:
 	docker build -t $(DEV_IMAGE):$(DEV_IMAGE_TAG) -f dev.Dockerfile .
