@@ -33,7 +33,6 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
-	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
