@@ -8,17 +8,21 @@ import (
 	"github.com/clover0/issue-agent/util"
 )
 
-func SelectForwarder(lo logger.Logger, model string) LLMForwarder {
+func SelectForwarder(lo logger.Logger, model string) (LLMForwarder, error) {
 	if util.IsAWSBedrockModel(model) {
-		return NewBedrockLLMForwarder(lo)
+		return NewBedrockLLMForwarder(lo), nil
 	}
 	if strings.HasPrefix(model, "gpt") {
-		return NewOpenAILLMForwarder(lo)
+		return NewOpenAILLMForwarder(lo), nil
 	}
 
 	if strings.HasPrefix(model, "claude") {
-		return NewAnthropicLLMForwarder(lo)
+		return NewAnthropicLLMForwarder(lo), nil
 	}
 
-	panic(fmt.Sprintf("model %s is not supported\n", model))
+	if model == "" {
+		return nil, fmt.Errorf("model is not specified")
+	}
+
+	return nil, fmt.Errorf("SelectForwarder: model %s is not supported", model)
 }
