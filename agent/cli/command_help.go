@@ -18,7 +18,12 @@ Command and Flags
   version: Show version of issue-agent CLI
 `
 	createPRFlags, _ := CreatePRFlags()
+
 	msg += fmt.Sprintf("  %s:\n", CreatePrCommand)
+	msg += "    Usage:\n"
+	msg += fmt.Sprintf("      %s GITHUB_OWNER/REPOSITORY/issues/NUMBER [flags]\n", CreatePrCommand)
+	msg += "    Flags:\n"
+
 	createPRFlags.VisitAll(func(flg *flag.Flag) {
 		msg += fmt.Sprintf("    --%s\n", flg.Name)
 		msg += IndentMultiLine(flg.Usage, "      ")

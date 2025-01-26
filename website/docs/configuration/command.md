@@ -9,6 +9,9 @@ Command and Flags
   help: Show usage of commands and flags
   version: Show version of issue-agent CLI
   create-pr:
+    Usage:
+      create-pr GITHUB_OWNER/REPOSITORY/issues/NUMBER [flags]
+    Flags:
     --aws_profile
       AWS profile to use a specific profile from credentials.
     --aws_region
