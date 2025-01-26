@@ -22,17 +22,17 @@ agent:
   prompt_path: ""
 
   # Required
-  # LLM model name
+  # LLM name
   # The recommend model is Claude 3.5 Sonnet
   # If you use AWS Bedrock, set the Model ID
   #   e.g) anthropic.claude-3-5-sonnet-20241022-v2:0
-  model: "claude-3-5-sonnet-latest"
+  model: ""
 
   # Maximum steps to run agent
   # The following are defined as 1 step
   # - user to LLM and returned to user from LLM
   # - execution function
-  max_steps: 70
+  max_steps: 50
 
   # Skip review agents
   # Default is true

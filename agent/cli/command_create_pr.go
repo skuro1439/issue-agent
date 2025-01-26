@@ -14,8 +14,10 @@ import (
 	"github.com/clover0/issue-agent/logger"
 )
 
-func IssueCommand(flags []string) error {
-	cliIn, err := ParseIssueInput(flags)
+const CreatePrCommand = "create-pr"
+
+func CreatePR(flags []string) error {
+	cliIn, err := ParseCreatePRInput(flags)
 	if err != nil {
 		return fmt.Errorf("failed to parse input: %w", err)
 	}
@@ -25,7 +27,7 @@ func IssueCommand(flags []string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	conf = MergeIssueInputConfig(conf, cliIn)
+	conf = cliIn.MergeConfig(conf)
 
 	if err := config.ValidateConfig(conf); err != nil {
 		return err

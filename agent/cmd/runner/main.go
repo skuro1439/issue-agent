@@ -128,8 +128,8 @@ func main() {
 	}
 }
 
-func parseArgs(lo logger.Logger) (*cli.IssueInputs, error) {
-	flags, mapper := cli.IssueFlags()
+func parseArgs(lo logger.Logger) (*cli.CreatePRInput, error) {
+	flags, mapper := cli.CreatePRFlags()
 
 	start := 1
 	for i, arg := range os.Args {

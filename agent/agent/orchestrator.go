@@ -34,7 +34,11 @@ func OrchestrateAgents(
 	workRepository string,
 	gh *github.Client,
 ) error {
-	llmForwarder := models.SelectForwarder(lo, conf.Agent.Model)
+	llmForwarder, err := models.SelectForwarder(lo, conf.Agent.Model)
+	if err != nil {
+		lo.Error("failed to select forwarder: %s\n", err)
+		return err
+	}
 
 	promptPath := conf.Agent.PromptPath
 	if len(promptPath) > 0 {

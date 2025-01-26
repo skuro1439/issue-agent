@@ -1,14 +1,15 @@
 package cli
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
 	"github.com/clover0/issue-agent/logger"
 )
 
-func Parse() (command string, flags []string, err error) {
+// Parse parses the command and others from os.Args
+// issue-agent <command> others
+func Parse() (command string, others []string, err error) {
 	if len(os.Args) < 2 {
 		return "", nil, fmt.Errorf("command is required")
 	}
@@ -17,41 +18,22 @@ func Parse() (command string, flags []string, err error) {
 }
 
 func Execute() error {
-	command, flags, err := Parse()
+	command, others, err := Parse()
 	if err != nil {
 		return fmt.Errorf("failed to parse input: %w", err)
 	}
 
-	// TODO: bind common flags to common struct here
-
 	lo := logger.NewPrinter("info")
 	switch command {
-	case "version":
-		return VersionCommand()
-	case "issue":
-		return IssueCommand(flags)
-	case "help":
-		help(lo)
+	case VersionCommand:
+		return Version()
+	case CreatePrCommand:
+		return CreatePR(others)
+	case HelpCommand:
+		Help(lo)
 		return nil
 	default:
-		help(lo)
+		Help(lo)
 		return fmt.Errorf("unknown command: %s", command)
 	}
-
-}
-
-func help(lo logger.Logger) {
-	msg := `Usage
-  issue-agent <command> [flags]
-Commands  help: Show usage of commands and flags
-  help: Show usage of commands and flags
-  version: Show version of issue-agent CLI
-`
-	issueFlags, _ := IssueFlags()
-	msg += "  issue:\n"
-	issueFlags.VisitAll(func(flg *flag.Flag) {
-		msg += fmt.Sprintf("    --%s\n", flg.Name)
-		msg += fmt.Sprintf("        %s\n", flg.Usage)
-	})
-	lo.Info(msg)
 }
