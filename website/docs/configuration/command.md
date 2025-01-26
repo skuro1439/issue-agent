@@ -5,24 +5,27 @@ $ issue-agent help
 
 Usage
   issue-agent <command> [flags]
-Commands  help: Show usage of commands and flags
+Command and Flags
   help: Show usage of commands and flags
   version: Show version of issue-agent CLI
   create-pr:
     --aws_profile
-        AWS profile to use for credentials
+      AWS profile to use a specific profile from credentials.
     --aws_region
-        AWS region to use for credentials and Bedrock. Default is aws profile's session region
+      AWS region to use for credentials and Bedrock.
+      Default(If use aws_profile): aws profile's default session region.
     --base_branch
-        Base Branch for pull request
+      Base Branch for pull request
     --config
-        Path to the configuration file. Default is `agent/config/default_config.yml in this project`
-    --from_file
-        Issue content from file path
+      Path to the configuration file.
+      Default: agent/config/default_config.yml in this project.
     --language
-        Language spoken by agent. Default is English
+      Language spoken by agent.
+      Default: English.
     --log_level
-        Log level. Default is `info`. If you want to see LLM completions, set it to `debug`
+      Log level. If you want to see LLM completions, set it to 'debug'.
+      Default: info.
     --model
-        LLM name. Default is `claude-3-5-sonnet-latest`
+      LLM name. For the model name, check the documentation of each LLM provider.
+
 ```
