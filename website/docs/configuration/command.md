@@ -24,5 +24,5 @@ Commands  help: Show usage of commands and flags
     --log_level
         Log level. Default is `info`. If you want to see LLM completions, set it to `debug`
     --model
-        LLM Model name. Default is `claude-3-5-sonnet-latest`
+        LLM name. Default is `claude-3-5-sonnet-latest`
 ```

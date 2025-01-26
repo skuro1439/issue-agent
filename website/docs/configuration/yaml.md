@@ -22,7 +22,7 @@ agent:
   prompt_path: ""
 
   # Required
-  # LLM model name
+  # LLM name
   # The recommend model is Claude 3.5 Sonnet
   # If you use AWS Bedrock, set the Model ID
   #   e.g) anthropic.claude-3-5-sonnet-20241022-v2:0

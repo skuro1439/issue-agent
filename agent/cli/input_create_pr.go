@@ -72,7 +72,7 @@ func CreatePRFlags() (*flag.FlagSet, *CreatePRInput) {
 	addCommonFlags(cmd, flagMapper.Common)
 
 	cmd.StringVar(&flagMapper.BaseBranch, "base_branch", "", "Base Branch for pull request")
-	cmd.StringVar(&flagMapper.FromFile, "from_file", "", "Issue content from file path")
+	cmd.StringVar(&flagMapper.FromFile, "from_file", "", "Issue content from file path.")
 
 	return cmd, flagMapper
 }
