@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -14,9 +13,6 @@ func Equal[V comparable](t *testing.T, got, expected V) {
 
 	// compare pointers
 	if gotIsPtr && expectedIsPtr {
-		fmt.Println("both are pointers")
-		t.Log("both are pointers")
-		fmt.Printf("got: %v\n", reflect.ValueOf(got).Elem())
 		if !reflect.ValueOf(got).Elem().Equal(reflect.ValueOf(expected).Elem()) {
 			t.Errorf(`assert.Equal(
 got: %v
