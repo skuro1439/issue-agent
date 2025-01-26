@@ -29,7 +29,7 @@ type Config struct {
 	LogLevel string `yaml:"log_level" validate:"log_level"`
 	Agent    struct {
 		PromptPath       string `yaml:"prompt_path"`
-		Model            string `yaml:"model"`
+		Model            string `yaml:"model" validate:"required"`
 		MaxSteps         int    `yaml:"max_steps" validate:"gte=0"`
 		SkipReviewAgents *bool  `yaml:"skip_review_agents"`
 		Git              struct {
@@ -121,11 +121,8 @@ func setDefaults(conf Config) Config {
 		conf.WorkDir = DefaultWorkDir
 	}
 
-	if conf.Agent.Model == "" {
-		conf.Agent.Model = "claude-3-5-sonnet-latest"
-	}
 	if conf.Agent.MaxSteps == 0 {
-		conf.Agent.MaxSteps = 70
+		conf.Agent.MaxSteps = 50
 	}
 
 	if conf.Agent.Git.UserName == "" {

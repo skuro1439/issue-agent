@@ -1,5 +1,6 @@
 # Setup
 
+## Environment Variables
 ```shell
 
 GITHUB_TOKEN=your github token
@@ -15,16 +16,11 @@ ANTHROPIC_API_KEY=your Anthropic API Key
 Copy [default_config.yml](https://github.com/clover0/issue-agent/blob/main/agent/config/default_config.yml) to your repository root as `issue_agent.yml`
 and edit the file.
 
+If you want to create `issue_agent.yml` file in an arbitrary path,
+specify the path in the command flags when executing the agent.
 
-Or you can use the following minimum YAML to create `issue-agent.yml`.
+```shell 
 
-
-Configuration parameter example as follows. See `Configuration` for more details.
-
-```yaml
-# Minimum Example
-# issue_agent.yml
-
+issue-agent \ 
+    --config_path /path/to/issue_agent.yml
 ```
-
-Set up the environment variables.
